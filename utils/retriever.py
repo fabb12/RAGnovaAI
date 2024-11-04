@@ -17,6 +17,13 @@ Rispondi alla seguente domanda in modo dettagliato, basandoti solo sul contesto 
 Risposta alla domanda: {question}
 """
 
+# Frasi indicative di risposte fuori contesto
+OUT_OF_CONTEXT_RESPONSES = [
+    "Mi dispiace, non posso rispondere",
+    "Non ho informazioni pertinenti",
+    "La tua domanda è fuori dal contesto",
+]
+
 def query_rag(query_text):
     """
     Esegue una query sul database Chroma e ottiene una risposta arricchita dal contesto.
@@ -29,7 +36,6 @@ def query_rag(query_text):
     # Esegue la ricerca di similarità
     results = db.similarity_search_with_relevance_scores(query_text, k=3)
     if len(results) == 0:
-        # Nessun documento pertinente, quindi ritorna solo la risposta senza riferimenti
         return "Non ci sono risultati pertinenti per la tua domanda.", []
 
     # Costruisci il contesto per il prompt
@@ -41,9 +47,12 @@ def query_rag(query_text):
     model = ChatOpenAI(max_tokens=3000)
     response_text = model.predict(prompt)
 
-    # Recupera i nomi dei documenti di riferimento utilizzati per il contesto, evitando duplicati
-    references = [doc.metadata.get("file_name", "Documento sconosciuto") for doc, _ in results]
-    unique_references = list(set(references))  # Rimuove duplicati
+    # Verifica se la risposta è fuori contesto
+    if any(phrase.lower() in response_text.lower() for phrase in OUT_OF_CONTEXT_RESPONSES):
+        # Se è una risposta fuori contesto, non includere i riferimenti
+        return response_text, []
 
-    # Ritorna la risposta e i riferimenti unici
-    return response_text, unique_references
+    # Recupera i nomi dei documenti di riferimento utilizzati per il contesto, evitando duplicati
+    references = list({doc.metadata.get("file_name", "Documento sconosciuto") for doc, _ in results})
+
+    return response_text, references
