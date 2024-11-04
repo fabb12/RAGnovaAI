@@ -1,15 +1,15 @@
 # main.py
 
 import streamlit as st
-
-# Configura la pagina come prima istruzione
-st.set_page_config(layout="wide")
-
 from database import load_or_create_chroma_db
 from utils.retriever import query_rag
+from utils.formatter import format_response  # Importa la funzione aggiornata
 from ui_components import apply_custom_css
 from config import API_KEY
 import os
+
+# Configura la pagina per usare tutta la larghezza disponibile
+st.set_page_config(layout="wide")
 
 # Applica il CSS personalizzato
 apply_custom_css()
@@ -33,18 +33,18 @@ if page == "Domande":
     if vector_store:
         question = st.text_input("Inserisci la tua domanda:", max_chars=500)
         if question:
-            answer = query_rag(question)
-            formatted_answer = f"""
-            ### Risposta:
+            # Ottieni la risposta e i documenti di riferimento
+            answer, references = query_rag(question)
 
-            {answer}
+            # Normalizza la risposta usando la funzione di formattazione
+            formatted_answer = format_response(answer, references)
 
-            ---
-            """
-            st.markdown(formatted_answer, unsafe_allow_html=True)
+            # Visualizza la risposta in formato Markdown
+            st.markdown(formatted_answer)
     else:
         st.warning("Nessuna knowledge base disponibile. Carica un documento nella sezione 'Gestione Documenti'.")
 
-# Se l'utente seleziona "Gestione Documenti", visualizza la pagina `manage_documents.py`
+# Se l'utente seleziona "Gestione Documenti", chiama la funzione `show_manage_documents_page`
 elif page == "Gestione Documenti":
-    import manage_documents
+    from manage_documents import show_manage_documents_page
+    show_manage_documents_page(vector_store)
