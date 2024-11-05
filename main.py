@@ -9,6 +9,26 @@ from config import OPENAI_API_KEY, ANTHROPIC_API_KEY, DEFAULT_MODEL
 import os
 from dotenv import load_dotenv
 
+import logging
+
+# Configura il logging per salvare tutte le domande e risposte
+logging.basicConfig(
+    filename="chat_log.txt",          # Nome del file di log
+    level=logging.INFO,                # Livello di log
+    format="%(asctime)s - %(message)s" # Formato con timestamp
+)
+
+def log_interaction(question, context, formatted_context, answer, history):
+    """
+    Registra nel file di log la domanda, il contesto, il contesto formattato,
+    la risposta e la cronologia.
+    """
+    logging.info("Domanda: %s", question)
+    logging.info("Contesto fornito: %s", context)
+    logging.info("Contesto formattato per il modello: %s", formatted_context)
+    logging.info("Risposta: %s", answer)
+    logging.info("Cronologia: %s", history)
+
 # Carica le variabili di ambiente dal file `.env`
 load_dotenv()
 
@@ -80,6 +100,18 @@ if page == "Domande":
             # Salva la domanda e risposta nella cronologia e aggiorna la risposta precedente
             st.session_state["history"].append({"question": question, "answer": formatted_answer})
             st.session_state["previous_answer"] = formatted_answer
+            # Esegui la query e registra l'interazione
+            formatted_context = f"{st.session_state['previous_answer']} \n\nDomanda attuale: {question}" if \
+            st.session_state["previous_answer"] else question
+
+            log_interaction(
+                question=question,
+                context=question_with_context,
+                formatted_context=formatted_context,  # Aggiungi il contesto formattato passato al modello
+                answer=formatted_answer,
+                history=st.session_state["history"]
+            )
+
     else:
         st.warning("Nessuna knowledge base disponibile. Carica un documento nella sezione 'Gestione Documenti'.")
 
