@@ -1,17 +1,15 @@
 # database.py
-
-import os
 from langchain.vectorstores import Chroma
 from langchain.embeddings import OpenAIEmbeddings
-import streamlit as st
 
-CHROMA_PATH = "chroma"  # Percorso per il database ChromaDB
+CHROMA_PATH = "chroma"
 
 def load_or_create_chroma_db():
-    """Carica o crea il database ChromaDB."""
-    if os.path.exists(CHROMA_PATH):
-        st.info("Caricamento della knowledge base esistente da ChromaDB...")
-        return Chroma(persist_directory=CHROMA_PATH, embedding_function=OpenAIEmbeddings())
-    else:
-        st.info("Non è stata trovata una knowledge base. Aggiungi documenti per crearne una nuova.")
-        return None
+    """Carica o crea una knowledge base usando Chroma."""
+    try:
+        embedding_function = OpenAIEmbeddings()
+        vector_store = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
+        return vector_store
+    except Exception as e:
+        print(f"Errore durante il caricamento della knowledge base: {e}")
+        return None  # Ritorna None in caso di errore

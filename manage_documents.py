@@ -1,5 +1,3 @@
-# manage_documents.py
-
 import streamlit as st
 import os
 import subprocess
@@ -7,7 +5,9 @@ from utils.document_loader import load_document, split_text
 from document_manager import load_existing_documents, add_document_to_db, get_document_metadata, delete_document
 from ui_components import apply_custom_css
 from datetime import datetime
+from database import load_or_create_chroma_db
 
+# Percorso locale per i documenti caricati
 LOCAL_DATA_PATH = "data"
 
 
@@ -17,94 +17,94 @@ def show_manage_documents_page(vector_store):
     apply_custom_css()
     st.header("Gestione Documenti")
 
-    # Inizializza `session_state` per i nomi dei documenti
+    # Inizializza session_state per document_names e loaded_documents se non esistono
     if "document_names" not in st.session_state:
-        st.session_state.document_names = {}
-    load_existing_documents(vector_store)
+        st.session_state["document_names"] = {}
+    if "loaded_documents" not in st.session_state:
+        st.session_state["loaded_documents"] = False
+    if "refresh_counter" not in st.session_state:
+        st.session_state["refresh_counter"] = 0
 
-    # ---- Sezione per Caricare Nuovi Documenti dal Computer ----
-    st.subheader("Aggiungi Nuovi Documenti")
+    # Verifica se la knowledge base è stata inizializzata
+    if vector_store is None:
+        st.warning("La knowledge base non è stata inizializzata. Carica i documenti per crearne una nuova.")
+        allow_document_upload = True
+        documents = []
+    else:
+        # Carica documenti esistenti
+        load_existing_documents(vector_store)
+        documents = get_document_metadata(vector_store)
+        allow_document_upload = True
 
-    # Opzione 1: Caricamento multiplo di file
-    uploaded_files = st.file_uploader(
-        "Carica uno o più file PDF, DOCX o TXT",
-        type=["pdf", "docx", "txt"],
-        accept_multiple_files=True
-    )
-    if uploaded_files:
-        for uploaded_file in uploaded_files:
-            file_path = f"{LOCAL_DATA_PATH}/{uploaded_file.name}"
-            with open(file_path, "wb") as f:
-                f.write(uploaded_file.getbuffer())
+    # ---- Sezione per Caricare Nuovi Documenti ----
+    if allow_document_upload:
+        st.subheader("Aggiungi Nuovi Documenti")
+        uploaded_files = st.file_uploader(
+            "Carica uno o più file PDF, DOCX o TXT",
+            type=["pdf", "docx", "txt", "doc"],
+            accept_multiple_files=True
+        )
+        if uploaded_files:
+            for uploaded_file in uploaded_files:
+                file_path = os.path.join(LOCAL_DATA_PATH, uploaded_file.name)
+                with open(file_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
 
-            data = load_document(file_path)
-            chunk_size = st.number_input("Dimensione chunk:", min_value=100, max_value=2048, value=512)
-            chunks = split_text(data, chunk_size=chunk_size)
+                # Carica e suddivide il documento in chunk
+                data = load_document(file_path)
+                chunks = split_text(data)
 
-            add_document_to_db(vector_store, chunks, file_path)
-        st.success(f"Caricati {len(uploaded_files)} documenti con successo!")
+                # Crea il database se non esiste
+                if vector_store is None:
+                    vector_store = load_or_create_chroma_db()
 
-    # Opzione 2: Caricamento di una cartella
-    st.write("### Oppure seleziona una cartella per importare tutti i documenti")
-    folder_path = st.text_input("Percorso della cartella contenente i documenti:")
-    if st.button("Carica Cartella"):
-        if os.path.isdir(folder_path):
-            supported_formats = (".pdf", ".docx", ".txt")
-            folder_files = [
-                os.path.join(folder_path, f)
-                for f in os.listdir(folder_path)
-                if f.lower().endswith(supported_formats)
-            ]
-            if not folder_files:
-                st.warning("Nessun file supportato trovato nella cartella selezionata.")
-            else:
-                for file_path in folder_files:
-                    data = load_document(file_path)
-                    chunk_size = st.number_input("Dimensione chunk:", min_value=100, max_value=2048, value=512)
-                    chunks = split_text(data, chunk_size=chunk_size)
+                add_document_to_db(vector_store, chunks, file_path)
+            st.session_state["refresh_counter"] += 1
+            st.success(f"Caricati {len(uploaded_files)} documenti con successo!")
 
-                    add_document_to_db(vector_store, chunks, file_path)
-                st.success(f"Caricati {len(folder_files)} documenti dalla cartella con successo!")
-        else:
-            st.error("Percorso della cartella non valido.")
+    # ---- Visualizzazione dei Documenti Esistenti ----
+    if vector_store and documents:
+        st.subheader("Documenti nella Knowledge Base")
 
-    # ---- Sezione per Visualizzare i Documenti Esistenti ----
-    st.subheader("Documenti nella Knowledge Base")
-
-    documents = get_document_metadata(vector_store)
-
-    # Intestazioni della tabella
-    col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 1, 1])
-    col1.write("Nome Documento")
-    col2.write("Dimensione (KB)")
-    col3.write("Data Creazione")
-    col4.write("Data Caricamento")
-    col5.write("Azione")
-    col6.write("Apri")
-
-    # Visualizza ogni documento come una riga nella tabella con pulsanti di eliminazione e apertura
-    for doc in documents:
+        # Intestazioni della tabella
         col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 1, 1])
-        col1.write(doc["Nome Documento"])
-        col2.write(doc["Dimensione (KB)"])
-        col3.write(doc["Data Creazione"])
-        col4.write(doc["Data Caricamento"])
+        col1.write("Nome Documento")
+        col2.write("Dimensione (KB)")
+        col3.write("Data Creazione")
+        col4.write("Data Caricamento")
+        col5.write("Azione")
+        col6.write("Apri")
 
-        unique_delete_key = f"delete_{doc['ID Documento']}"
-        if col5.button("Elimina", key=unique_delete_key):
-            delete_document(vector_store, doc["ID Documento"])
-            del st.session_state.document_names[doc["ID Documento"]]
-            st.success(f"Documento '{doc['Nome Documento']}' rimosso con successo!")
-            st.experimental_rerun()
+        for doc in documents:
+            col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 1, 1])
+            col1.write(doc["Nome Documento"])
+            col2.write(doc["Dimensione (KB)"])
+            col3.write(doc["Data Creazione"])
+            col4.write(doc["Data Caricamento"])
 
-        # Pulsante per aprire il file con l'applicazione predefinita
-        file_path = os.path.join(LOCAL_DATA_PATH, doc["Nome Documento"])
-        unique_open_key = f"open_{doc['ID Documento']}"
-        if col6.button("Apri", key=unique_open_key):
-            if os.path.exists(file_path):
-                if os.name == 'posix':  # Per macOS e Linux
-                    subprocess.call(["open" if os.uname().sysname == "Darwin" else "xdg-open", file_path])
-                elif os.name == 'nt':  # Per Windows
-                    os.startfile(file_path)
-            else:
-                st.error(f"Il file {doc['Nome Documento']} non è stato trovato.")
+            unique_delete_key = f"delete_{doc['ID Documento']}"
+            if col5.button("Elimina", key=unique_delete_key):
+                delete_document(vector_store, doc["ID Documento"])
+                del st.session_state.document_names[doc["ID Documento"]]
+                st.success(f"Documento '{doc['Nome Documento']}' rimosso con successo!")
+                st._set_query_params(refresh=st.session_state["refresh_counter"])
+
+                if "document_names" in st.session_state and doc["ID Documento"] in st.session_state.document_names:
+                    del st.session_state.document_names[doc["ID Documento"]]
+                st.session_state["refresh_counter"] += 1
+                st.success(f"Documento '{doc['Nome Documento']}' rimosso con successo!")
+
+            # Pulsante per aprire il file con l'applicazione predefinita
+            file_path = os.path.join(LOCAL_DATA_PATH, doc["Nome Documento"])
+            unique_open_key = f"open_{doc['ID Documento']}"
+            if col6.button("Apri", key=unique_open_key):
+                if os.path.exists(file_path):
+                    if os.name == 'posix':  # Per macOS e Linux
+                        subprocess.call(["open" if os.uname().sysname == "Darwin" else "xdg-open", file_path])
+                    elif os.name == 'nt':  # Per Windows
+                        os.startfile(file_path)
+                else:
+                    st.error(f"Il file {doc['Nome Documento']} non è stato trovato.")
+
+    # Forza un refresh simulato aggiungendo un parametro di query
+    st._set_query_params(refresh=st.session_state["refresh_counter"])
