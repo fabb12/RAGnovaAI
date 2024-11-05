@@ -22,9 +22,9 @@ def format_response(answer, references):
         references_section = ""
 
     # Aggiungi una nota finale, se necessario
-    note_section = "\n\n_Nota: Le informazioni sono state generate utilizzando i documenti pertinenti._" if references else ""
+    #note_section = "\n\n_Nota: Le informazioni sono state generate utilizzando i documenti pertinenti._" if references else ""
 
     # Struttura Markdown finale della risposta
-    full_formatted_answer = f"{formatted_answer}{references_section}{note_section}"
+    full_formatted_answer = f"{formatted_answer}{references_section}"
 
     return full_formatted_answer
