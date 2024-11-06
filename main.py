@@ -15,14 +15,12 @@ logging.basicConfig(
     format="%(asctime)s - %(message)s"
 )
 
-
 def log_interaction(question, context, formatted_context, answer, history):
     logging.info("Domanda: %s", question)
     logging.info("Contesto fornito: %s", context)
     logging.info("Contesto formattato per il modello: %s", formatted_context)
     logging.info("Risposta: %s", answer)
     logging.info("Cronologia: %s", history)
-
 
 # Carica le variabili di ambiente dal file `.env`
 load_dotenv()
@@ -40,6 +38,9 @@ vector_store = load_or_create_chroma_db()
 st.sidebar.title("📚 Navigazione")
 page = st.sidebar.radio("Vai a:", ["❓ Domande", "🗂️ Gestione Documenti"])
 
+# Divider per separare le sezioni
+st.sidebar.divider()
+
 # Selezione modello con dropdown colorato e spiegazione
 st.sidebar.markdown("### Modello Intelligenza Artificiale")
 model_options = ["GPT (OpenAI)", "Claude (Anthropic)"]
@@ -51,6 +52,9 @@ if model_choice == "GPT (OpenAI)" and not OPENAI_API_KEY:
     st.sidebar.error("🔑 Chiave API OpenAI non impostata.")
 elif model_choice == "Claude (Anthropic)" and not ANTHROPIC_API_KEY:
     st.sidebar.error("🔑 Chiave API Anthropic non impostata.")
+
+# Divider per separare la sezione della cronologia delle domande
+st.sidebar.divider()
 
 # Visualizzazione della cronologia con effetti e layout migliorato
 st.sidebar.markdown("### 📜 Cronologia delle Domande")
