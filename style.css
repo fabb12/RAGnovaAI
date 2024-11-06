@@ -1,0 +1,163 @@
+/* Impostazioni generali della pagina */
+body {
+    background-color: #121212;
+    color: #e0e0e0;
+    font-family: 'Arial', sans-serif;
+}
+
+.stApp {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+/* Stile della barra laterale */
+.sidebar .sidebar-content {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+}
+
+.stSidebar > div {
+    background-color: #1e1e1e;
+}
+
+.stSidebar .stButton button {
+    background-color: #333333;
+    color: #ffffff;
+    border: 1px solid #444444;
+    border-radius: 8px;
+}
+
+.stSidebar .stButton button:hover {
+    background-color: #555555;
+}
+
+/* Titoli e intestazioni */
+h1, h2, h3, h4 {
+    color: #ffffff;
+}
+
+.stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4 {
+    color: #ffffff;
+}
+
+/* Input di testo */
+.stTextInput > div > div > input {
+    background-color: #333333;
+    color: #ffffff;
+    border: 1px solid #444444;
+    border-radius: 8px;
+}
+
+.stTextInput > div > div > input:focus {
+    border-color: #6200ea;
+    box-shadow: 0 0 5px #6200ea;
+}
+
+/* Stile dei pulsanti */
+.stButton button {
+    background-color: #6200ea;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: bold;
+}
+
+.stButton button:hover {
+    background-color: #3700b3;
+}
+
+/* Stile dei messaggi di errore, avviso e successo */
+.stAlert {
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.stAlert .stMarkdown {
+    color: #ffffff;
+}
+
+.stAlert[data-baseweb="error"] {
+    background-color: #cf6679;
+}
+
+.stAlert[data-baseweb="warning"] {
+    background-color: #fdd835;
+    color: #333333;
+}
+
+.stAlert[data-baseweb="info"] {
+    background-color: #03dac5;
+    color: #000000;
+}
+
+.stAlert[data-baseweb="success"] {
+    background-color: #388e3c;
+}
+
+/* Stile per la cronologia e risposte */
+.stSidebar .caption {
+    color: #aaaaaa;
+}
+
+.stSidebar .markdown-text-container {
+    color: #bbbbbb;
+}
+
+.stMarkdown p, .stMarkdown ul, .stMarkdown ol {
+    color: #e0e0e0;
+}
+
+/* Divider */
+.css-hr4jb2 hr {
+    background-color: #444444;
+    border: none;
+    height: 1px;
+    opacity: 0.5;
+}
+
+/* SelectBox per la selezione del modello */
+.stSelectbox > div > div {
+    background-color: #333333;
+    color: #e0e0e0;
+}
+
+.stSelectbox > div > div:hover {
+    border-color: #6200ea;
+    box-shadow: 0 0 5px #6200ea;
+}
+
+.stSelectbox .stMarkdown {
+    color: #e0e0e0;
+}
+
+/* Migliora le tabelle */
+.stDataFrame {
+    background-color: #222222;
+    color: #e0e0e0;
+    border: 1px solid #444444;
+    border-radius: 8px;
+}
+
+.stDataFrame tr {
+    border-bottom: 1px solid #333333;
+}
+
+.stDataFrame th {
+    background-color: #333333;
+    color: #ffffff;
+}
+
+.stDataFrame td {
+    color: #e0e0e0;
+}
+
+/* Link */
+a, a:hover {
+    color: #bb86fc;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
