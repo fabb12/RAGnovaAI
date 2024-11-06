@@ -21,8 +21,15 @@ def load_existing_documents(vector_store):
             doc_id = metadata.get("doc_id")
             file_name = metadata.get("file_name", "Senza Nome")
             file_hash = metadata.get("file_hash")
+            file_path = metadata.get("file_path")  # Percorso assoluto salvato nei metadati
+
+            # Aggiunge il documento a `session_state` senza duplicati
             if doc_id and file_name and doc_id not in st.session_state.document_names:
-                st.session_state.document_names[doc_id] = {"file_name": file_name, "file_hash": file_hash}
+                st.session_state.document_names[doc_id] = {
+                    "file_name": file_name,
+                    "file_hash": file_hash,
+                    "file_path": file_path
+                }
         st.session_state.loaded_documents = True
 
 def document_exists(vector_store, file_hash):
@@ -34,9 +41,10 @@ def document_exists(vector_store, file_hash):
     return False
 
 def add_document_to_db(vector_store, chunks, file_path):
-    """Aggiunge un documento e i suoi chunk al database e aggiorna `session_state` evitando duplicati tramite hash."""
-    file_name = os.path.basename(file_path)
-    file_hash = calculate_file_hash(file_path)  # Calcola l'hash per il controllo duplicati
+    """Aggiunge un documento e i suoi chunk al database, salvando il percorso assoluto senza duplicarlo."""
+    file_name     = os.path.basename(file_path)
+    file_hash     = calculate_file_hash(file_path)  # Calcola l'hash per il controllo duplicati
+    abs_file_path = os.path.abspath(file_path)      # Percorso assoluto
 
     # Verifica duplicati prima dell'aggiunta
     if document_exists(vector_store, file_hash):
@@ -44,20 +52,21 @@ def add_document_to_db(vector_store, chunks, file_path):
         return  # Interrompe l'aggiunta in caso di duplicato
 
     # Crea metadati per il nuovo documento
-    doc_id = str(uuid.uuid4())
-    file_size = os.path.getsize(file_path) / 1024  # Converti dimensione in KB
+    doc_id        = str(uuid.uuid4())
+    file_size     = os.path.getsize(file_path) / 1024  # Converti dimensione in KB
     creation_date = datetime.fromtimestamp(os.path.getctime(file_path)).strftime("%Y-%m-%d %H:%M:%S")
-    upload_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    upload_date   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     # Aggiunge i metadati a ciascun chunk
     for chunk in chunks:
         chunk.metadata.update({
-            "doc_id": doc_id,
-            "file_name": file_name,
-            "file_size": file_size,
-            "creation_date": creation_date,
-            "upload_date": upload_date,
-            "file_hash": file_hash
+            "doc_id"        : doc_id,
+            "file_name"     : file_name,
+            "file_size"     : file_size,
+            "creation_date" : creation_date,
+            "upload_date"   : upload_date,
+            "file_hash"     : file_hash,
+            "file_path"     : abs_file_path  # Salva il percorso assoluto
         })
 
     # Aggiungi al database e salva
@@ -68,8 +77,13 @@ def add_document_to_db(vector_store, chunks, file_path):
     vector_store.persist()
 
     # Aggiorna `session_state` con il nuovo documento
-    st.session_state.document_names[doc_id] = {"file_name": file_name, "file_hash": file_hash}
+    st.session_state.document_names[doc_id] = {
+        "file_name": file_name,
+        "file_hash": file_hash,
+        "file_path": abs_file_path  # Percorso assoluto per l'apertura diretta
+    }
     st.success(f"Documento '{file_name}' aggiunto alla knowledge base con successo!")
+
 def delete_document(vector_store, doc_id):
     try:
         if doc_id in st.session_state.document_names:
@@ -85,7 +99,6 @@ def delete_document(vector_store, doc_id):
                 st.success(f"Documento con ID '{doc_id}' rimosso con successo.")
     except Exception as e:
         st.error(f"Errore durante l'eliminazione del documento: {e}")
-
 
 def get_document_metadata(vector_store):
     """Recupera i metadati dei documenti dal database per la visualizzazione nella tabella."""
@@ -105,6 +118,18 @@ def get_document_metadata(vector_store):
                 "Nome Documento": metadata.get("file_name", "Senza Nome"),
                 "Dimensione (KB)": f"{metadata.get('file_size', 0):.2f} KB",
                 "Data Creazione": metadata.get("creation_date", "N/A"),
-                "Data Caricamento": metadata.get("upload_date", "N/A")
+                "Data Caricamento": metadata.get("upload_date", "N/A"),
+                "Percorso Assoluto": metadata.get("file_path")  # Aggiunge il percorso assoluto
             })
     return documents
+
+def open_document(doc_id):
+    """Apre il documento usando il percorso assoluto memorizzato in `session_state`."""
+    if doc_id in st.session_state.document_names:
+        file_path = st.session_state.document_names[doc_id]["file_path"]
+        if os.path.exists(file_path):
+            os.startfile(file_path)  # Per Windows; usa `subprocess.call` per macOS/Linux
+        else:
+            st.error("Il file non è stato trovato al percorso specificato.")
+    else:
+        st.error("Documento non trovato in `session_state`.")

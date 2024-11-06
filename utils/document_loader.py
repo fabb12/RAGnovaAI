@@ -4,12 +4,18 @@ from langchain.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import win32com.client as win32
 from tempfile import TemporaryDirectory
-
+import pythoncom
 
 import shutil
 
+import shutil
+import os
+import pypandoc
+from tempfile import TemporaryDirectory
+
+
 def convert_doc_to_docx(file_path):
-    """Converte un file .doc in .docx su Windows usando win32com.client, con percorso temporaneo semplificato."""
+    """Converte un file .doc in .docx usando pypandoc, se disponibile."""
     if not file_path.endswith(".doc"):
         return file_path  # Restituisce il percorso originale se è già un .docx
 
@@ -17,23 +23,16 @@ def convert_doc_to_docx(file_path):
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Il file {file_path} non esiste.")
 
-    # Usa un percorso temporaneo per la conversione
+    # Usa una directory temporanea per la conversione
     with TemporaryDirectory() as temp_dir:
-        temp_file_path = os.path.join(temp_dir, "temp_document.doc")
-        shutil.copy(file_path, temp_file_path)  # Copia il file in un percorso temporaneo semplice
-        converted_path = os.path.join(temp_dir, "temp_document.docx")
+        converted_path = os.path.join(temp_dir, "converted_document.docx")
 
-        if platform.system() == "Windows":
-            try:
-                word = win32.Dispatch("Word.Application")
-                word.Visible = False
-                doc = word.Documents.Open(temp_file_path)
-                doc.SaveAs2(converted_path, FileFormat=16)  # Formato 16 per .docx
-                doc.Close()
-                word.Quit()
-                return converted_path
-            except Exception as e:
-                raise RuntimeError(f"Errore nella conversione del file {file_path} in .docx: {e}")
+        try:
+            # Esegue la conversione usando pypandoc
+            pypandoc.convert_file(file_path, 'docx', outputfile=converted_path)
+            return converted_path  # Restituisce il percorso del file .docx convertito
+        except Exception as e:
+            raise RuntimeError(f"Errore nella conversione del file {file_path} in .docx: {e}")
 
 
 def load_document(file_path):
