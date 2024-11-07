@@ -73,41 +73,54 @@ if "previous_answer" not in st.session_state:
     st.session_state["previous_answer"] = ""
 
 # Sezione Domande e Risposte
+# Sezione Domande e Risposte
 if page == "❓ Domande":
     st.header("💬 Fai una Domanda su Master Finance")
+
     st.markdown("Inserisci la tua domanda qui sotto per ricevere risposte personalizzate.")
 
-    if vector_store:
+    # Configura una riga con colonne per la domanda e il livello di competenza
+    col1, col2 = st.columns([3, 1])  # La domanda occupa più spazio rispetto al selettore
+
+    with col1:
         question = st.text_input("📝 Inserisci la tua domanda:", max_chars=500, help="Digita la tua domanda qui")
 
-        if question:
-            question_with_context = (
-                f"{st.session_state['previous_answer']} \n\nDomanda attuale: {question}"
-                if st.session_state["previous_answer"] else question
-            )
+    with col2:
+        expertise_level = st.selectbox(
+            "Livello competenza",
+            ["beginner", "intermediate", "expert"],
+            index=2,
+            help="Scegli il livello per adattare il dettaglio della risposta."
+        )
 
-            # Esegui la query
-            if model_choice == "GPT (OpenAI)" and OPENAI_API_KEY:
-                answer, references = query_rag_with_gpt(question_with_context)
-            elif model_choice == "Claude (Anthropic)" and ANTHROPIC_API_KEY:
-                answer, references, _, _ = query_rag_with_cloud(question_with_context)
-            else:
-                answer = "⚠️ La chiave API per il modello selezionato non è disponibile."
-                references = []
+    if vector_store and question:
+        question_with_context = (
+            f"{st.session_state['previous_answer']} \n\nDomanda attuale: {question}"
+            if st.session_state["previous_answer"] else question
+        )
 
-            # Mostra la risposta e aggiorna cronologia
-            formatted_answer = format_response(answer, references)
-            st.markdown(formatted_answer)
+        # Esegui la query, includendo `expertise_level`
+        if model_choice == "GPT (OpenAI)" and OPENAI_API_KEY:
+            answer, references = query_rag_with_gpt(question_with_context, expertise_level=expertise_level)
+        elif model_choice == "Claude (Anthropic)" and ANTHROPIC_API_KEY:
+            answer, references, _, _ = query_rag_with_cloud(question_with_context, expertise_level=expertise_level)
+        else:
+            answer = "⚠️ La chiave API per il modello selezionato non è disponibile."
+            references = []
 
-            st.session_state["history"].append({"question": question, "answer": formatted_answer})
-            st.session_state["previous_answer"] = formatted_answer
-            log_interaction(
-                question, question_with_context, question_with_context, formatted_answer, st.session_state["history"]
-            )
-            st.divider()
+        # Mostra la risposta e aggiorna cronologia
+        formatted_answer = format_response(answer, references)
+        st.markdown(formatted_answer)
 
-    else:
+        st.session_state["history"].append({"question": question, "answer": formatted_answer})
+        st.session_state["previous_answer"] = formatted_answer
+        log_interaction(
+            question, question_with_context, question_with_context, formatted_answer, st.session_state["history"]
+        )
+        st.divider()
+    elif not vector_store:
         st.warning("🚨 Nessuna knowledge base disponibile. Carica un documento nella sezione 'Gestione Documenti'.")
+
 
 # Sezione Gestione Documenti
 elif page == "🗂️ Gestione Documenti":

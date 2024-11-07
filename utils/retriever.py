@@ -51,8 +51,7 @@ OUT_OF_CONTEXT_RESPONSES = [
     "Non lo so",
 ]
 
-
-def query_rag_with_gpt(query_text):
+def query_rag_with_gpt(query_text, expertise_level="expert"):
     """
     Executes a query on the Chroma database and retrieves a context-enriched response.
     Returns the generated response and a list of relevant document references with page numbers.
@@ -74,7 +73,7 @@ def query_rag_with_gpt(query_text):
     prompt = prompt_template.format(
         context=context_text,
         question=query_text,
-        expertise_level="expert",
+        expertise_level=expertise_level,
         conversation_history=""  # Default to an empty string if not provided
     )
 
@@ -94,8 +93,7 @@ def query_rag_with_gpt(query_text):
 
     return response_text, references
 
-
-def query_rag_with_cloud(query_text):
+def query_rag_with_cloud(query_text, expertise_level="expert"):
     """
     Executes a query on the Chroma database and retrieves a context-enhanced response
     using Anthropic's SDK with the specified model.
@@ -118,15 +116,15 @@ def query_rag_with_cloud(query_text):
     context_text = "\n\n- -\n\n".join([doc.page_content for doc, _ in results])
     prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
 
-    # Add conversation_history with a default value
+    # Add conversation_history with a default empty value
     prompt = prompt_template.format(
         context=context_text,
         question=query_text,
-        expertise_level="expert",
-        conversation_history=""  # Default to an empty string if missing
+        expertise_level=expertise_level,
+        conversation_history=""
     )
 
-    # Configure the Anthropic client with the specified model
+    # Configure the Anthropic client
     client = Anthropic(api_key=ANTHROPIC_API_KEY)
     message = client.messages.create(
         model="claude-3-5-sonnet-20240620",
