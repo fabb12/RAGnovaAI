@@ -35,12 +35,18 @@ class DocumentInterface:
         self.doc_manager.load_existing_documents()
         documents = self.doc_manager.get_document_metadata()
 
+        # ---- Opzioni per la dimensione dei chunk ----
+        st.subheader("Impostazioni Chunking")
+        chunk_size = st.number_input("Dimensione Chunk", min_value=100, max_value=2000, value=500, step=100)
+        chunk_overlap = st.number_input("Sovrapposizione Chunk", min_value=0, max_value=500, value=50, step=10)
+
+        # ---- Sezione per Selezionare e Caricare Nuovi Documenti ----
         st.subheader("Aggiungi Nuovi Documenti")
         if st.button("Seleziona File"):
             file_paths = self.select_files()
             if file_paths:
                 for file_path in file_paths:
-                    self.doc_manager.add_document(file_path)
+                    self.doc_manager.add_document(file_path, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
                 st.session_state["refresh_counter"] += 1
                 st.success(f"Caricati {len(file_paths)} documenti con successo!")
 

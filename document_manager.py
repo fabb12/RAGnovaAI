@@ -6,7 +6,6 @@ from datetime import datetime
 from utils.embeddings import create_embeddings
 from utils.document_loader import load_document, split_text  # Per gestione documenti e chunk
 
-
 class DocumentManager:
     ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt"}
 
@@ -39,7 +38,7 @@ class DocumentManager:
                 return True
         return False
 
-    def add_document(self, file_path):
+    def add_document(self, file_path, chunk_size=500, chunk_overlap=50):
         """Carica e aggiunge un documento, suddividendolo in chunk e salvandolo nel database."""
         file_name = os.path.basename(file_path)
         file_hash = self.calculate_file_hash(file_path)
@@ -55,9 +54,9 @@ class DocumentManager:
         creation_date = datetime.fromtimestamp(os.path.getctime(file_path)).strftime("%Y-%m-%d %H:%M:%S")
         upload_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # Carica e divide il contenuto del documento in chunk
+        # Carica e divide il contenuto del documento in chunk personalizzati
         data = load_document(file_path)
-        chunks = split_text(data)
+        chunks = split_text(data, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
         # Aggiungi ogni chunk al database con i metadati del documento
         for chunk in chunks:
