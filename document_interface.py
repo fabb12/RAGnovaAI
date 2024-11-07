@@ -35,51 +35,59 @@ class DocumentInterface:
         self.doc_manager.load_existing_documents()
         documents = self.doc_manager.get_document_metadata()
 
-        # ---- Opzioni per la dimensione dei chunk ----
+        # ---- Opzioni per la dimensione dei chunk e selezione file/cartella ----
         with st.container():
             st.markdown("---")  # Linea di separazione visiva
-            st.markdown("### 📂 Carica Documenti e Imposta Chunk")
+            st.markdown("### 🧩 Imposta Chunk")
 
-            col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+            # Prima riga: campi per impostare `chunk_size` e `chunk_overlap`
+            col1, col2 = st.columns([1, 1])
             with col1:
                 chunk_size = st.number_input("Dimensione Chunk", min_value=100, max_value=2000, value=500, step=100,
                                              help="Dimensione di ogni chunk")
             with col2:
                 chunk_overlap = st.number_input("Sovrapposizione Chunk", min_value=0, max_value=500, value=50, step=10,
                                                 help="Sovrapposizione dei chunk")
+
+            st.markdown("---")  # Linea di separazione visiva
+            st.markdown("### 📂 Carica Documenti")
+            # Seconda riga: bottoni per "Seleziona Cartella" e "Seleziona File"
+            col3, col4 = st.columns([1, 1])
             with col3:
-                if st.button("Seleziona File"):
-                    file_paths = self.select_files()
-                    if file_paths:
-                        for file_path in file_paths:
-                            self.doc_manager.add_document(file_path, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-                        st.success(f"Caricati {len(file_paths)} documenti con successo!")
-            with col4:
                 if st.button("Seleziona Cartella"):
                     folder_path = self.select_folder()
                     if folder_path:
                         self.doc_manager.add_folder(folder_path, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
                         st.success(f"Documenti dalla cartella '{folder_path}' caricati con successo!")
 
+            with col4:
+                if st.button("Seleziona File"):
+                    file_paths = self.select_files()
+                    if file_paths:
+                        for file_path in file_paths:
+                            self.doc_manager.add_document(file_path, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+                        st.success(f"Caricati {len(file_paths)} documenti con successo!")
+
         # ---- Visualizzazione della Tabella Documenti ----
         if documents:
             st.markdown("---")  # Linea di separazione
             st.markdown("### 📑 Documenti nella Knowledge Base")
 
-            # Definizione della tabella con colonne e colori alternati
+            # Intestazioni delle colonne della tabella
             header_cols = st.columns([2, 1.5, 1.5, 1.5, 1, 1])
             headers = ["Nome Documento", "Dimensione (KB)", "Data Creazione", "Data Caricamento", "Azione", "Apri"]
             for header, col in zip(headers, header_cols):
                 col.markdown(f"**{header}**")
 
-            # Colori per le righe alternati per uno stile dark
+            # Colori scuri alternati per righe e testo chiaro
             row_colors = ["#2a2a2a", "#3d3d3d"]  # Colori scuri alternati
-            text_color = "#e0e0e0"  # Colore del testo chiaro per contrasto
+            text_color = "#e0e0e0"
 
             for idx, doc in enumerate(documents):
-                row_color = row_colors[idx % 2]  # Colore alternato
+                row_color = row_colors[idx % 2]
                 with st.container():
                     col1, col2, col3, col4, col5, col6 = st.columns([2, 1.5, 1.5, 1.5, 1, 1])
+
                     for col, text in zip([col1, col2, col3, col4],
                                          [doc["Nome Documento"], doc["Dimensione (KB)"], doc["Data Creazione"],
                                           doc["Data Caricamento"]]):
