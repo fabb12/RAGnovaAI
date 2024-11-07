@@ -4,26 +4,26 @@ import uuid
 import hashlib
 from datetime import datetime
 from utils.embeddings import create_embeddings
-from utils.document_loader import load_document, split_text
-import database
+from utils.document_loader import load_document, split_text  # Per gestione documenti e chunk
+
 class DocumentManager:
     ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt"}
 
-    def __init__(self, kb_name=None):
-        """Inizializza il DocumentManager per una knowledge base specifica."""
-        self.kb_name = kb_name or "default_kb"
-        self.vector_store = database.load_or_create_chroma_db(self.kb_name)
-        self.init_session_state()  # Assicurati che session_state sia inizializzato
+    def __init__(self, vector_store):
+        self.vector_store = vector_store
+        self.init_session_state()
 
     def init_session_state(self):
         """Inizializza variabili nel session state."""
         if "document_names" not in st.session_state:
             st.session_state["document_names"] = {}
-        if f"loaded_documents_{self.kb_name}" not in st.session_state:
-            st.session_state[f"loaded_documents_{self.kb_name}"] = False
+        if "loaded_documents" not in st.session_state:
+            st.session_state["loaded_documents"] = False
         if "refresh_counter" not in st.session_state:
             st.session_state["refresh_counter"] = 0
+
     def calculate_file_hash(self, file_path):
+        """Calcola un hash univoco per il file per identificare duplicati basati sul contenuto."""
         hash_md5 = hashlib.md5()
         with open(file_path, "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
@@ -31,21 +31,22 @@ class DocumentManager:
         return hash_md5.hexdigest()
 
     def document_exists(self, file_hash):
+        """Controlla se un documento con lo stesso hash è già presente nel database."""
         results = self.vector_store._collection.get(include=["metadatas"])
-        return any(metadata.get("file_hash") == file_hash for metadata in results["metadatas"])
+        for metadata in results["metadatas"]:
+            if metadata.get("file_hash") == file_hash:
+                return True
+        return False
 
     def add_document(self, file_path, chunk_size=500, chunk_overlap=50):
-        """Aggiunge un documento, suddividendolo in chunk e salvandolo nella KB."""
-        if "document_names" not in st.session_state:
-            st.session_state["document_names"] = {}  # Inizializzazione di sicurezza
-
-        """Aggiunge un documento alla KB."""
+        """Carica e aggiunge un documento, suddividendolo in chunk e salvandolo nel database."""
         file_name = os.path.basename(file_path)
         file_hash = self.calculate_file_hash(file_path)
         abs_file_path = os.path.abspath(file_path)
 
+        # Verifica duplicati
         if self.document_exists(file_hash):
-            st.warning(f"Il documento '{file_name}' è già presente nella KB '{self.kb_name}'.")
+            st.warning(f"Il documento '{file_name}' è già presente nel database.")
             return
 
         doc_id = str(uuid.uuid4())
@@ -53,9 +54,11 @@ class DocumentManager:
         creation_date = datetime.fromtimestamp(os.path.getctime(file_path)).strftime("%Y-%m-%d %H:%M:%S")
         upload_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+        # Carica e divide il contenuto del documento in chunk personalizzati
         data = load_document(file_path)
         chunks = split_text(data, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
+        # Aggiungi ogni chunk al database con i metadati del documento
         for chunk in chunks:
             chunk.metadata.update({
                 "doc_id": doc_id,
@@ -67,19 +70,24 @@ class DocumentManager:
                 "file_path": abs_file_path
             })
 
-        # Aggiungi i documenti alla knowledge base
-        self.vector_store.add_documents(chunks)
+        # Aggiungi i chunk al database
+        if self.vector_store is None:
+            self.vector_store = create_embeddings(chunks)
+        else:
+            self.vector_store.add_documents(chunks)
         self.vector_store.persist()
 
+        # Aggiorna `session_state`
         st.session_state.document_names[doc_id] = {
             "file_name": file_name,
             "file_hash": file_hash,
             "file_path": abs_file_path
         }
-        st.success(f"Documento '{file_name}' aggiunto alla KB '{self.kb_name}' con successo!")
+        st.success(f"Documento '{file_name}' aggiunto alla knowledge base con successo!")
+
     def load_existing_documents(self):
-        """Carica documenti esistenti per evitare duplicati."""
-        if self.vector_store and not st.session_state.get(f"loaded_documents_{self.kb_name}", False):
+        """Carica i documenti esistenti dal database e li memorizza in `session_state` per evitare duplicati."""
+        if self.vector_store and not st.session_state.get("loaded_documents", False):
             results = self.vector_store._collection.get(include=["metadatas"])
             for metadata in results["metadatas"]:
                 doc_id = metadata.get("doc_id")
@@ -93,14 +101,16 @@ class DocumentManager:
                         "file_hash": file_hash,
                         "file_path": file_path
                     }
-            st.session_state[f"loaded_documents_{self.kb_name}"] = True
+            st.session_state.loaded_documents = True
 
     def delete_document(self, doc_id):
-        """Elimina un documento dalla KB selezionata."""
+        """Elimina un documento dal database usando il suo ID."""
         try:
             if doc_id in st.session_state.document_names:
                 self.vector_store._collection.delete(ids=[doc_id])
                 self.vector_store.persist()
+
+                # Verifica l'eliminazione
                 exists = self.vector_store._collection.get(ids=[doc_id])
                 if exists:
                     st.warning(f"Il documento con ID '{doc_id}' non è stato eliminato correttamente.")
@@ -134,7 +144,7 @@ class DocumentManager:
         return documents
 
     def open_document(self, doc_id):
-        """Apre il documento dal percorso memorizzato in `session_state`."""
+        """Apre il documento usando il percorso assoluto memorizzato in `session_state`."""
         if doc_id in st.session_state.document_names:
             file_path = st.session_state.document_names[doc_id]["file_path"]
             if os.path.exists(file_path):
@@ -145,12 +155,13 @@ class DocumentManager:
             st.error("Documento non trovato in `session_state`.")
 
     def add_folder(self, folder_path, chunk_size, chunk_overlap):
-        """Carica tutti i file supportati dalla cartella selezionata nella KB."""
+        """Carica ricorsivamente tutti i file accettati dalla cartella specificata."""
         for root, _, files in os.walk(folder_path):
             for file in files:
                 file_path = os.path.join(root, file)
                 ext = os.path.splitext(file_path)[1].lower()
                 if ext in self.ALLOWED_EXTENSIONS:
+                    # Passa chunk_size e chunk_overlap al metodo add_document
                     self.add_document(file_path, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
                 else:
                     st.warning(f"Il file '{file}' è stato scartato perché non supportato.")

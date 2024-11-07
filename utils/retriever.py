@@ -7,10 +7,13 @@ from langchain.vectorstores import Chroma
 from langchain.embeddings import OpenAIEmbeddings
 import os
 from langchain_community.llms.anthropic import Anthropic
-from anthropic import HUMAN_PROMPT, AI_PROMPT
+from anthropic import  HUMAN_PROMPT, AI_PROMPT
+import os
+from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
+import os
 
 # Percorso per il database Chroma
-CHROMA_PATH = "knowledge_bases"  # Directory per knowledge bases
+CHROMA_PATH = "chroma"
 
 # Template per la domanda e il contesto
 PROMPT_TEMPLATE = """
@@ -42,50 +45,47 @@ User's Expertise Level: {expertise_level}
 Note: Answer in the language of the user’s question.
 """.replace("{conversation_history}", "{conversation_history:}")
 
+
 # Frasi indicative di risposte fuori contesto
 OUT_OF_CONTEXT_RESPONSES = [
     "Non lo so",
 ]
 
-
-def query_rag_with_gpt(query_text, expertise_level="expert", kb_name="default_kb"):
+def query_rag_with_gpt(query_text, expertise_level="expert"):
     """
-    Executes a query on a specified Chroma knowledge base and retrieves a context-enriched response.
+    Executes a query on the Chroma database and retrieves a context-enriched response.
     Returns the generated response and a list of relevant document references with page numbers.
     """
-    # Path specifico per la KB
-    kb_path = os.path.join(CHROMA_PATH, kb_name)
-
     # Initialize the embedding function and Chroma database
     embedding_function = OpenAIEmbeddings()
-    db = Chroma(persist_directory=kb_path, embedding_function=embedding_function)
+    db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
 
-    # Cerca documenti rilevanti per il contesto
+    # Search for relevant documents for context
     results = db.similarity_search_with_relevance_scores(query_text, k=3)
     if len(results) == 0:
         return "Non ci sono risultati pertinenti per la tua domanda.", []
 
-    # Prepara il contesto per il prompt
+    # Prepare the context text
     context_text = "\n\n- -\n\n".join([doc.page_content for doc, _ in results])
     prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
 
-    # Formatta il prompt, includendo `conversation_history` con valore predefinito
+    # Format the prompt, including conversation_history with a default empty string
     prompt = prompt_template.format(
         context=context_text,
         question=query_text,
         expertise_level=expertise_level,
-        conversation_history=""
+        conversation_history=""  # Default to an empty string if not provided
     )
 
-    # Configura e ottieni la risposta dal modello
+    # Set up the ChatOpenAI model and get the response
     model = ChatOpenAI(max_tokens=3000)
     response_text = model.predict(prompt)
 
-    # Verifica se la risposta è fuori contesto
+    # Check if the response is out of context
     if any(phrase.lower() in response_text.lower() for phrase in OUT_OF_CONTEXT_RESPONSES):
         return response_text, []
 
-    # Recupera i riferimenti ai documenti
+    # Retrieve document references with page numbers
     references = list({
         f"{doc.metadata.get('file_name', 'Documento sconosciuto')}"
         for doc, _ in results
@@ -93,34 +93,30 @@ def query_rag_with_gpt(query_text, expertise_level="expert", kb_name="default_kb
 
     return response_text, references
 
-
-def query_rag_with_cloud(query_text, expertise_level="expert", kb_name="default_kb"):
+def query_rag_with_cloud(query_text, expertise_level="expert"):
     """
-    Executes a query on a specified Chroma knowledge base and retrieves a context-enhanced response
+    Executes a query on the Chroma database and retrieves a context-enhanced response
     using Anthropic's SDK with the specified model.
     """
-    # Recupera la chiave API per Anthropic
+    # Get the API key from the `.env` file or environment variable
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
     if not ANTHROPIC_API_KEY:
         raise ValueError("Anthropic API key is not set. Check the `.env` file.")
 
-    # Path specifico per la KB
-    kb_path = os.path.join(CHROMA_PATH, kb_name)
-
     # Initialize Chroma database for context
     embedding_function = OpenAIEmbeddings()
-    db = Chroma(persist_directory=kb_path, embedding_function=embedding_function)
+    db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
 
-    # Cerca documenti rilevanti per il contesto
+    # Search for relevant documents for context
     results = db.similarity_search_with_relevance_scores(query_text, k=3)
     if len(results) == 0:
         return "No relevant results found for your question.", []
 
-    # Prepara il contesto per il prompt
+    # Prepare the context text
     context_text = "\n\n- -\n\n".join([doc.page_content for doc, _ in results])
     prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
 
-    # Formatta il prompt
+    # Add conversation_history with a default empty value
     prompt = prompt_template.format(
         context=context_text,
         question=query_text,
@@ -128,7 +124,7 @@ def query_rag_with_cloud(query_text, expertise_level="expert", kb_name="default_
         conversation_history=""
     )
 
-    # Configura il client Anthropic
+    # Configure the Anthropic client
     client = Anthropic(api_key=ANTHROPIC_API_KEY)
     message = client.messages.create(
         model="claude-3-5-sonnet-20240620",
@@ -148,16 +144,16 @@ def query_rag_with_cloud(query_text, expertise_level="expert", kb_name="default_
         ]
     )
 
-    # Estrai la risposta e l'uso dei token
+    # Extract the generated response and token usage
     result_text = message.content[0].text
     input_tokens = message.usage.input_tokens
     output_tokens = message.usage.output_tokens
 
-    # Verifica se la risposta è fuori contesto
+    # Check if the response is out of context
     if any(phrase.lower() in result_text.lower() for phrase in OUT_OF_CONTEXT_RESPONSES):
         return result_text, [], input_tokens, output_tokens
 
-    # Recupera i riferimenti ai documenti
+    # Retrieve document references with page numbers
     references = list({
         f"{doc.metadata.get('file_name', 'Unknown Document')}"
         for doc, _ in results
