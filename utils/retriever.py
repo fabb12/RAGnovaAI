@@ -55,7 +55,7 @@ OUT_OF_CONTEXT_RESPONSES = [
 def query_rag_with_gpt(query_text):
     """
     Executes a query on the Chroma database and retrieves a context-enriched response.
-    Returns the generated response and a unique list of relevant document references if applicable.
+    Returns the generated response and a list of relevant document references with page numbers.
     """
     # Initialize the embedding function and Chroma database
     embedding_function = OpenAIEmbeddings()
@@ -86,8 +86,12 @@ def query_rag_with_gpt(query_text):
     if any(phrase.lower() in response_text.lower() for phrase in OUT_OF_CONTEXT_RESPONSES):
         return response_text, []
 
-    # Retrieve document references
-    references = list({doc.metadata.get("file_name", "Documento sconosciuto") for doc, _ in results})
+    # Retrieve document references with page numbers
+    references = list({
+        f"{doc.metadata.get('file_name', 'Documento sconosciuto')} - Pagina {doc.metadata.get('page_number', 'Sconosciuta')}"
+        for doc, _ in results
+    })
+
     return response_text, references
 
 
@@ -151,6 +155,10 @@ def query_rag_with_cloud(query_text):
     if any(phrase.lower() in result_text.lower() for phrase in OUT_OF_CONTEXT_RESPONSES):
         return result_text, [], input_tokens, output_tokens
 
-    # Retrieve document references
-    references = list({doc.metadata.get("file_name", "Unknown Document") for doc, _ in results})
+    # Retrieve document references with page numbers
+    references = list({
+        f"{doc.metadata.get('file_name', 'Unknown Document')} - Pagina {doc.metadata.get('page_number', 'Unknown')}"
+        for doc, _ in results
+    })
+
     return result_text, references, input_tokens, output_tokens
