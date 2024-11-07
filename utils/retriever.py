@@ -87,7 +87,7 @@ def query_rag_with_gpt(query_text, expertise_level="expert"):
 
     # Retrieve document references with page numbers
     references = list({
-        f"{doc.metadata.get('file_name', 'Documento sconosciuto')} - Pagina {doc.metadata.get('page_number', 'Sconosciuta')}"
+        f"{doc.metadata.get('file_name', 'Documento sconosciuto')}"
         for doc, _ in results
     })
 
@@ -155,7 +155,7 @@ def query_rag_with_cloud(query_text, expertise_level="expert"):
 
     # Retrieve document references with page numbers
     references = list({
-        f"{doc.metadata.get('file_name', 'Unknown Document')} - Pagina {doc.metadata.get('page_number', 'Unknown')}"
+        f"{doc.metadata.get('file_name', 'Unknown Document')}"
         for doc, _ in results
     })
 
