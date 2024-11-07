@@ -8,7 +8,7 @@ from utils.retriever import query_rag_with_gpt, query_rag_with_cloud
 from utils.formatter import format_response
 from ui_components import apply_custom_css
 from config import OPENAI_API_KEY, ANTHROPIC_API_KEY, DEFAULT_MODEL
-
+import database
 # Configura il logging per salvare tutte le domande e risposte
 logging.basicConfig(
     filename="chat_log.txt",
@@ -34,8 +34,12 @@ st.set_page_config(page_title="Master Finance Q&A", layout="wide", page_icon="�
 apply_custom_css()
 
 # Inizializza il database e l'interfaccia documenti
-vector_store = load_or_create_chroma_db()
-doc_interface = DocumentInterface(vector_store)  # Istanzia DocumentInterface
+vector_store = database.load_or_create_chroma_db()
+# Imposta il nome della KB
+kb_name = "default_kb"  # o un nome scelto dall'utente, es: 'selected_kb'
+
+# Inizializza il DocumentManager con il nome della KB
+doc_interface = DocumentInterface(kb_name)  # Passa `kb_name` come stringa
 
 # Barra laterale con icone e opzioni di navigazione
 st.sidebar.title("📚 Navigazione")
@@ -72,7 +76,6 @@ if "history" not in st.session_state:
 if "previous_answer" not in st.session_state:
     st.session_state["previous_answer"] = ""
 
-# Sezione Domande e Risposte
 # Sezione Domande e Risposte
 if page == "❓ Domande":
     st.header("💬 Fai una Domanda su Master Finance")
