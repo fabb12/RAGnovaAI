@@ -30,57 +30,70 @@ class DocumentInterface:
 
     def show(self):
         apply_custom_css()
-        st.header("Gestione Documenti")
 
+        # Carica documenti esistenti nel database e aggiorna `session_state`
         self.doc_manager.load_existing_documents()
         documents = self.doc_manager.get_document_metadata()
 
         # ---- Opzioni per la dimensione dei chunk ----
-        st.subheader("Impostazioni Chunking")
-        chunk_size = st.number_input("Dimensione Chunk", min_value=100, max_value=2000, value=500, step=100)
-        chunk_overlap = st.number_input("Sovrapposizione Chunk", min_value=0, max_value=500, value=50, step=10)
+        with st.container():
+            st.markdown("---")  # Linea di separazione visiva
+            st.markdown("### 📂 Carica Documenti e Imposta Chunk")
 
-        # ---- Sezione per Selezionare e Caricare Nuovi Documenti ----
-        st.subheader("Aggiungi Nuovi Documenti")
-        if st.button("Seleziona File"):
-            file_paths = self.select_files()
-            if file_paths:
-                for file_path in file_paths:
-                    self.doc_manager.add_document(file_path, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-                st.session_state["refresh_counter"] += 1
-                st.success(f"Caricati {len(file_paths)} documenti con successo!")
+            col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+            with col1:
+                chunk_size = st.number_input("Dimensione Chunk", min_value=100, max_value=2000, value=500, step=100,
+                                             help="Dimensione di ogni chunk")
+            with col2:
+                chunk_overlap = st.number_input("Sovrapposizione Chunk", min_value=0, max_value=500, value=50, step=10,
+                                                help="Sovrapposizione dei chunk")
+            with col3:
+                if st.button("Seleziona File"):
+                    file_paths = self.select_files()
+                    if file_paths:
+                        for file_path in file_paths:
+                            self.doc_manager.add_document(file_path, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+                        st.success(f"Caricati {len(file_paths)} documenti con successo!")
+            with col4:
+                if st.button("Seleziona Cartella"):
+                    folder_path = self.select_folder()
+                    if folder_path:
+                        self.doc_manager.add_folder(folder_path, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+                        st.success(f"Documenti dalla cartella '{folder_path}' caricati con successo!")
 
-        if st.button("Seleziona Cartella"):
-            folder_path = self.select_folder()
-            if folder_path:
-                self.doc_manager.add_folder(folder_path)
-                st.success(f"Documenti dalla cartella '{folder_path}' caricati con successo!")
-
-        # Visualizza documenti caricati
+        # ---- Visualizzazione della Tabella Documenti ----
         if documents:
-            st.subheader("Documenti nella Knowledge Base")
-            col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 1, 1])
-            col1.write("Nome Documento")
-            col2.write("Dimensione (KB)")
-            col3.write("Data Creazione")
-            col4.write("Data Caricamento")
-            col5.write("Azione")
-            col6.write("Apri")
+            st.markdown("---")  # Linea di separazione
+            st.markdown("### 📑 Documenti nella Knowledge Base")
 
-            for doc in documents:
-                col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 1, 1])
-                col1.write(doc["Nome Documento"])
-                col2.write(doc["Dimensione (KB)"])
-                col3.write(doc["Data Creazione"])
-                col4.write(doc["Data Caricamento"])
+            # Definizione della tabella con colonne e colori alternati
+            header_cols = st.columns([2, 1.5, 1.5, 1.5, 1, 1])
+            headers = ["Nome Documento", "Dimensione (KB)", "Data Creazione", "Data Caricamento", "Azione", "Apri"]
+            for header, col in zip(headers, header_cols):
+                col.markdown(f"**{header}**")
 
-                doc_id = doc["ID Documento"]
-                if col5.button("Elimina", key=f"delete_{doc_id}"):
-                    self.doc_manager.delete_document(doc_id)
-                    st.session_state["refresh_counter"] += 1
-                    st.success(f"Documento '{doc['Nome Documento']}' rimosso con successo!")
+            # Colori per le righe alternati per uno stile dark
+            row_colors = ["#2a2a2a", "#3d3d3d"]  # Colori scuri alternati
+            text_color = "#e0e0e0"  # Colore del testo chiaro per contrasto
 
-                if col6.button("Apri", key=f"open_{doc_id}"):
-                    self.doc_manager.open_document(doc_id)
+            for idx, doc in enumerate(documents):
+                row_color = row_colors[idx % 2]  # Colore alternato
+                with st.container():
+                    col1, col2, col3, col4, col5, col6 = st.columns([2, 1.5, 1.5, 1.5, 1, 1])
+                    for col, text in zip([col1, col2, col3, col4],
+                                         [doc["Nome Documento"], doc["Dimensione (KB)"], doc["Data Creazione"],
+                                          doc["Data Caricamento"]]):
+                        col.markdown(
+                            f'<div style="background-color: {row_color}; color: {text_color}; padding: 5px;">{text}</div>',
+                            unsafe_allow_html=True)
 
-        st._set_query_params(refresh=st.session_state["refresh_counter"])
+                    doc_id = doc["ID Documento"]
+                    if col5.button("Elimina", key=f"delete_{doc_id}"):
+                        self.doc_manager.delete_document(doc_id)
+                        st.success(f"Documento '{doc['Nome Documento']}' rimosso con successo!")
+
+                    if col6.button("Apri", key=f"open_{doc_id}"):
+                        self.doc_manager.open_document(doc_id)
+
+        # Forza un refresh della pagina per aggiornare la lista dei documenti
+        st.experimental_rerun() if st.session_state.get("refresh_counter") else None
