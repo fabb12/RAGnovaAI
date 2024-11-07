@@ -1,12 +1,13 @@
 import streamlit as st
+import os
+from dotenv import load_dotenv
+import logging
 from database import load_or_create_chroma_db
+from document_interface import DocumentInterface  # Importa la nuova classe DocumentInterface
 from utils.retriever import query_rag_with_gpt, query_rag_with_cloud
 from utils.formatter import format_response
 from ui_components import apply_custom_css
 from config import OPENAI_API_KEY, ANTHROPIC_API_KEY, DEFAULT_MODEL
-import os
-from dotenv import load_dotenv
-import logging
 
 # Configura il logging per salvare tutte le domande e risposte
 logging.basicConfig(
@@ -15,6 +16,7 @@ logging.basicConfig(
     format="%(asctime)s - %(message)s"
 )
 
+# Funzione per il logging delle interazioni
 def log_interaction(question, context, formatted_context, answer, history):
     logging.info("Domanda: %s", question)
     logging.info("Contesto fornito: %s", context)
@@ -28,20 +30,21 @@ load_dotenv()
 # Configura la pagina per usare tutta la larghezza disponibile e icona
 st.set_page_config(page_title="Master Finance Q&A", layout="wide", page_icon="💬")
 
-# Applica il CSS personalizzato per migliorare la grafica
+# Applica il CSS personalizzato
 apply_custom_css()
 
-# Inizializza o carica il database ChromaDB
+# Inizializza il database e l'interfaccia documenti
 vector_store = load_or_create_chroma_db()
+doc_interface = DocumentInterface(vector_store)  # Istanzia DocumentInterface
 
-# Barra laterale con icone e colori distintivi
+# Barra laterale con icone e opzioni di navigazione
 st.sidebar.title("📚 Navigazione")
 page = st.sidebar.radio("Vai a:", ["❓ Domande", "🗂️ Gestione Documenti"])
 
 # Divider per separare le sezioni
 st.sidebar.divider()
 
-# Selezione modello con dropdown colorato e spiegazione
+# Selezione del modello di intelligenza artificiale
 st.sidebar.markdown("### Modello Intelligenza Artificiale")
 model_options = ["GPT (OpenAI)", "Claude (Anthropic)"]
 default_index = model_options.index(DEFAULT_MODEL) if DEFAULT_MODEL in model_options else 0
@@ -53,10 +56,10 @@ if model_choice == "GPT (OpenAI)" and not OPENAI_API_KEY:
 elif model_choice == "Claude (Anthropic)" and not ANTHROPIC_API_KEY:
     st.sidebar.error("🔑 Chiave API Anthropic non impostata.")
 
-# Divider per separare la sezione della cronologia delle domande
+# Divider per separare la cronologia delle domande
 st.sidebar.divider()
 
-# Visualizzazione della cronologia con effetti e layout migliorato
+# Visualizzazione della cronologia delle domande
 st.sidebar.markdown("### 📜 Cronologia delle Domande")
 if "history" in st.session_state and st.session_state["history"]:
     for i, entry in enumerate(reversed(st.session_state["history"])):
@@ -69,7 +72,7 @@ if "history" not in st.session_state:
 if "previous_answer" not in st.session_state:
     st.session_state["previous_answer"] = ""
 
-# Sezione Domande con layout migliorato e bottoni di invio dinamici
+# Sezione Domande e Risposte
 if page == "❓ Domande":
     st.header("💬 Fai una Domanda su Master Finance")
     st.markdown("Inserisci la tua domanda qui sotto per ricevere risposte personalizzate.")
@@ -78,11 +81,12 @@ if page == "❓ Domande":
         question = st.text_input("📝 Inserisci la tua domanda:", max_chars=500, help="Digita la tua domanda qui")
 
         if question:
-            # Preparazione del contesto
-            question_with_context = f"{st.session_state['previous_answer']} \n\nDomanda attuale: {question}" if \
-            st.session_state["previous_answer"] else question
+            question_with_context = (
+                f"{st.session_state['previous_answer']} \n\nDomanda attuale: {question}"
+                if st.session_state["previous_answer"] else question
+            )
 
-            # Esecuzione della query
+            # Esegui la query
             if model_choice == "GPT (OpenAI)" and OPENAI_API_KEY:
                 answer, references = query_rag_with_gpt(question_with_context)
             elif model_choice == "Claude (Anthropic)" and ANTHROPIC_API_KEY:
@@ -91,27 +95,22 @@ if page == "❓ Domande":
                 answer = "⚠️ La chiave API per il modello selezionato non è disponibile."
                 references = []
 
-            # Formattazione della risposta
+            # Mostra la risposta e aggiorna cronologia
             formatted_answer = format_response(answer, references)
             st.markdown(formatted_answer)
 
-            # Aggiornamento della cronologia
             st.session_state["history"].append({"question": question, "answer": formatted_answer})
             st.session_state["previous_answer"] = formatted_answer
-            formatted_context = question_with_context
-            log_interaction(question, question_with_context, formatted_context, formatted_answer,
-                            st.session_state["history"])
-
-            # Divider e pulsante per una nuova domanda
+            log_interaction(
+                question, question_with_context, question_with_context, formatted_answer, st.session_state["history"]
+            )
             st.divider()
 
     else:
         st.warning("🚨 Nessuna knowledge base disponibile. Carica un documento nella sezione 'Gestione Documenti'.")
 
-# Sezione Gestione Documenti con layout avanzato
+# Sezione Gestione Documenti
 elif page == "🗂️ Gestione Documenti":
     st.header("📁 Gestione Documenti")
     st.markdown("Carica, visualizza e gestisci i documenti nella knowledge base.")
-    from manage_documents import show_manage_documents_page
-
-    show_manage_documents_page(vector_store)
+    doc_interface.show()
