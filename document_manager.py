@@ -154,13 +154,14 @@ class DocumentManager:
         else:
             st.error("Documento non trovato in `session_state`.")
 
-    def add_folder(self, folder_path):
+    def add_folder(self, folder_path, chunk_size, chunk_overlap):
         """Carica ricorsivamente tutti i file accettati dalla cartella specificata."""
         for root, _, files in os.walk(folder_path):
             for file in files:
                 file_path = os.path.join(root, file)
                 ext = os.path.splitext(file_path)[1].lower()
                 if ext in self.ALLOWED_EXTENSIONS:
-                    self.add_document(file_path)
+                    # Passa chunk_size e chunk_overlap al metodo add_document
+                    self.add_document(file_path, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
                 else:
                     st.warning(f"Il file '{file}' è stato scartato perché non supportato.")

@@ -1,34 +1,35 @@
 /* Impostazioni generali della pagina */
 body {
     background-color: #121212;
-    color: #e0e0e0;
+    color: #d3d3d3;
     font-family: 'Arial', sans-serif;
 }
 
 .stApp {
     background-color: #121212;
-    color: #e0e0e0;
+    color: #d3d3d3;
 }
 
 /* Stile della barra laterale */
 .sidebar .sidebar-content {
-    background-color: #1e1e1e;
-    color: #e0e0e0;
+    background-color: #1c1c1c;
+    color: #d3d3d3;
 }
 
 .stSidebar > div {
-    background-color: #1e1e1e;
+    background-color: #1c1c1c;
 }
 
 .stSidebar .stButton button {
-    background-color: #333333;
-    color: #ffffff;
-    border: 1px solid #444444;
-    border-radius: 8px;
+    background-color: #4a4a4a;
+    color: #f1f1f1;
+    border: 1px solid #5a5a5a;
+    border-radius: 6px;
 }
 
 .stSidebar .stButton button:hover {
-    background-color: #555555;
+    background-color: #5a5a5a;
+    color: #ffffff;
 }
 
 /* Titoli e intestazioni */
@@ -42,34 +43,34 @@ h1, h2, h3, h4 {
 
 /* Input di testo */
 .stTextInput > div > div > input {
-    background-color: #333333;
+    background-color: #2e2e2e;
     color: #ffffff;
-    border: 1px solid #444444;
-    border-radius: 8px;
+    border: 1px solid #3d3d3d;
+    border-radius: 6px;
 }
 
 .stTextInput > div > div > input:focus {
-    border-color: #6200ea;
-    box-shadow: 0 0 5px #6200ea;
+    border-color: #007acc;
+    box-shadow: 0 0 4px #007acc;
 }
 
 /* Stile dei pulsanti */
 .stButton button {
-    background-color: #6200ea;
+    background-color: #0056b3;
     color: #ffffff;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     padding: 10px 20px;
     font-weight: bold;
 }
 
 .stButton button:hover {
-    background-color: #3700b3;
+    background-color: #004494;
 }
 
 /* Stile dei messaggi di errore, avviso e successo */
 .stAlert {
-    border-radius: 8px;
+    border-radius: 6px;
     padding: 10px;
 }
 
@@ -78,17 +79,17 @@ h1, h2, h3, h4 {
 }
 
 .stAlert[data-baseweb="error"] {
-    background-color: #cf6679;
+    background-color: #b33a3a;
 }
 
 .stAlert[data-baseweb="warning"] {
-    background-color: #fdd835;
+    background-color: #e6b800;
     color: #333333;
 }
 
 .stAlert[data-baseweb="info"] {
-    background-color: #03dac5;
-    color: #000000;
+    background-color: #006064;
+    color: #ffffff;
 }
 
 .stAlert[data-baseweb="success"] {
@@ -97,7 +98,7 @@ h1, h2, h3, h4 {
 
 /* Stile per la cronologia e risposte */
 .stSidebar .caption {
-    color: #aaaaaa;
+    color: #999999;
 }
 
 .stSidebar .markdown-text-container {
@@ -105,12 +106,12 @@ h1, h2, h3, h4 {
 }
 
 .stMarkdown p, .stMarkdown ul, .stMarkdown ol {
-    color: #e0e0e0;
+    color: #d3d3d3;
 }
 
 /* Divider */
 .css-hr4jb2 hr {
-    background-color: #444444;
+    background-color: #3d3d3d;
     border: none;
     height: 1px;
     opacity: 0.5;
@@ -118,29 +119,33 @@ h1, h2, h3, h4 {
 
 /* SelectBox per la selezione del modello */
 .stSelectbox > div > div {
-    background-color: #333333;
-    color: #e0e0e0;
+    background-color: #2e2e2e;
+    color: #d3d3d3;
 }
 
 .stSelectbox > div > div:hover {
-    border-color: #6200ea;
-    box-shadow: 0 0 5px #6200ea;
+    border-color: #007acc;
+    box-shadow: 0 0 4px #007acc;
 }
 
 .stSelectbox .stMarkdown {
-    color: #e0e0e0;
+    color: #d3d3d3;
 }
 
 /* Migliora le tabelle */
 .stDataFrame {
-    background-color: #222222;
-    color: #e0e0e0;
-    border: 1px solid #444444;
-    border-radius: 8px;
+    background-color: #1f1f1f;
+    color: #d3d3d3;
+    border: 1px solid #3d3d3d;
+    border-radius: 6px;
 }
 
-.stDataFrame tr {
-    border-bottom: 1px solid #333333;
+.stDataFrame tr:nth-child(even) {
+    background-color: #282828;
+}
+
+.stDataFrame tr:nth-child(odd) {
+    background-color: #1f1f1f;
 }
 
 .stDataFrame th {
@@ -149,12 +154,12 @@ h1, h2, h3, h4 {
 }
 
 .stDataFrame td {
-    color: #e0e0e0;
+    color: #d3d3d3;
 }
 
 /* Link */
 a, a:hover {
-    color: #bb86fc;
+    color: #80b3ff;
     text-decoration: none;
 }
 
