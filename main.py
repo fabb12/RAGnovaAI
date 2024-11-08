@@ -121,7 +121,7 @@ display_history()
 # Sezione Domande e Risposte
 if page == "❓ Domande":
     st.header("💬 Fai una Domanda su Master Finance")
-    st.markdown("Inserisci la tua domanda qui sotto per ricevere risposte personalizzate.")
+    #st.markdown("Inserisci la tua domanda qui sotto per ricevere risposte personalizzate.")
 
     # Configura una riga con colonne per la domanda e il livello di competenza
     col1, col2 = st.columns([3, 1])
@@ -139,7 +139,7 @@ if page == "❓ Domande":
         expertise_level = st.selectbox(
             "Livello competenza",
             ["beginner", "intermediate", "expert"],
-            index=2,
+            index=0,
             help="Scegli il livello per adattare il dettaglio della risposta."
         )
 
