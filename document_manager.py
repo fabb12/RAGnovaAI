@@ -66,6 +66,8 @@ class DocumentManager:
 
         # Carica e divide il contenuto del documento in chunk personalizzati
         data = load_document(file_path)
+        if not data:
+            return
         chunks = split_text(data, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
         # Aggiungi ogni chunk al database con i metadati del documento

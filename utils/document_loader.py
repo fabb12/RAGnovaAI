@@ -36,22 +36,24 @@ def convert_doc_to_docx(file_path):
 
 
 def load_document(file_path):
-    """Carica un documento PDF, DOC, DOCX o TXT dal percorso specificato."""
+    """
+    Carica un documento PDF, DOCX o TXT dal percorso specificato.
+    Restituisce None se il formato non è supportato.
+    """
     _, extension = os.path.splitext(file_path)
+    extension = extension.lower()  # Normalizza l'estensione per evitare problemi con maiuscole/minuscole
 
     if extension == '.pdf':
         loader = PyPDFLoader(file_path)
     elif extension == '.docx':
         loader = Docx2txtLoader(file_path)
-    elif extension == '.doc':
-        # Converti il file .doc in .docx e poi carica il .docx
-        converted_path = convert_doc_to_docx(file_path)
-        loader = Docx2txtLoader(converted_path)
     elif extension == '.txt':
         loader = TextLoader(file_path)
     else:
-        raise ValueError("Formato documento non supportato.")
+        # Se il formato non è supportato, non fare nulla
+        return None
 
+    # Carica il contenuto del documento
     return loader.load()
 
 
