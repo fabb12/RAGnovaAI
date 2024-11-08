@@ -10,6 +10,9 @@ class DocumentManager:
     ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt"}
 
     def __init__(self, vector_store):
+        if vector_store is None:
+            # Creare un nuovo vector store se non esiste
+            vector_store = create_embeddings([])  # Usa una funzione che crea un nuovo vector store
         self.vector_store = vector_store
         self.init_session_state()
 
@@ -32,6 +35,9 @@ class DocumentManager:
 
     def document_exists(self, file_hash):
         """Controlla se un documento con lo stesso hash è già presente nel database."""
+        if not self.vector_store or not hasattr(self.vector_store, '_collection'):
+            st.error("Il vector store non è inizializzato.")
+            return False  # Oppure alza un'eccezione specifica
         results = self.vector_store._collection.get(include=["metadatas"])
         for metadata in results["metadatas"]:
             if metadata.get("file_hash") == file_hash:
@@ -40,6 +46,10 @@ class DocumentManager:
 
     def add_document(self, file_path, chunk_size=500, chunk_overlap=50):
         """Carica e aggiunge un documento, suddividendolo in chunk e salvandolo nel database."""
+
+        if self.vector_store is None:
+            self.vector_store = create_embeddings([])  # Inizializza un nuovo vector store
+
         file_name = os.path.basename(file_path)
         file_hash = self.calculate_file_hash(file_path)
         abs_file_path = os.path.abspath(file_path)

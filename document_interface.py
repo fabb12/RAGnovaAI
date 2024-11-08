@@ -2,7 +2,6 @@ import streamlit as st
 from tkinter import Tk, filedialog
 from document_manager import DocumentManager
 from ui_components import apply_custom_css
-from database import load_or_create_chroma_db
 
 
 class DocumentInterface:

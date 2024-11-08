@@ -54,44 +54,41 @@ OUT_OF_CONTEXT_RESPONSES = [
 def query_rag_with_gpt(query_text, expertise_level="expert"):
     """
     Executes a query on the Chroma database and retrieves a context-enriched response.
-    Returns the generated response and a list of relevant document references with page numbers.
+    Returns the generated response and a list of relevant document references with paths.
     """
-    # Initialize the embedding function and Chroma database
     embedding_function = OpenAIEmbeddings()
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
 
-    # Search for relevant documents for context
     results = db.similarity_search_with_relevance_scores(query_text, k=3)
     if len(results) == 0:
         return "Non ci sono risultati pertinenti per la tua domanda.", []
 
-    # Prepare the context text
     context_text = "\n\n- -\n\n".join([doc.page_content for doc, _ in results])
     prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
 
-    # Format the prompt, including conversation_history with a default empty string
     prompt = prompt_template.format(
         context=context_text,
         question=query_text,
         expertise_level=expertise_level,
-        conversation_history=""  # Default to an empty string if not provided
+        conversation_history=""
     )
 
-    # Set up the ChatOpenAI model and get the response
     model = ChatOpenAI(max_tokens=3000)
     response_text = model.predict(prompt)
 
-    # Check if the response is out of context
     if any(phrase.lower() in response_text.lower() for phrase in OUT_OF_CONTEXT_RESPONSES):
         return response_text, []
 
-    # Retrieve document references with page numbers
-    references = list({
-        f"{doc.metadata.get('file_name', 'Documento sconosciuto')}"
+    references = [
+        {
+            "file_name": doc.metadata.get("file_name", "Documento sconosciuto"),
+            "file_path": doc.metadata.get("file_path", "Percorso sconosciuto"),
+        }
         for doc, _ in results
-    })
+    ]
 
     return response_text, references
+
 
 def query_rag_with_cloud(query_text, expertise_level="expert"):
     """
@@ -110,7 +107,7 @@ def query_rag_with_cloud(query_text, expertise_level="expert"):
     # Search for relevant documents for context
     results = db.similarity_search_with_relevance_scores(query_text, k=3)
     if len(results) == 0:
-        return "No relevant results found for your question.", []
+        return "No relevant results found for your question.", [], 0, 0
 
     # Prepare the context text
     context_text = "\n\n- -\n\n".join([doc.page_content for doc, _ in results])
@@ -128,7 +125,7 @@ def query_rag_with_cloud(query_text, expertise_level="expert"):
     client = Anthropic(api_key=ANTHROPIC_API_KEY)
     message = client.messages.create(
         model="claude-3-5-sonnet-20240620",
-        max_tokens=3000,
+        max_tokens=4096,
         temperature=0.7,
         system=PROMPT_TEMPLATE,
         messages=[
@@ -153,10 +150,13 @@ def query_rag_with_cloud(query_text, expertise_level="expert"):
     if any(phrase.lower() in result_text.lower() for phrase in OUT_OF_CONTEXT_RESPONSES):
         return result_text, [], input_tokens, output_tokens
 
-    # Retrieve document references with page numbers
-    references = list({
-        f"{doc.metadata.get('file_name', 'Unknown Document')}"
+    # Retrieve document references with paths
+    references = [
+        {
+            "file_name": doc.metadata.get("file_name", "Unknown Document"),
+            "file_path": doc.metadata.get("file_path", "Unknown Path"),
+        }
         for doc, _ in results
-    })
+    ]
 
     return result_text, references, input_tokens, output_tokens

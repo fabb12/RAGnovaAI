@@ -1,30 +1,66 @@
-# utils/formatter.py
+import streamlit as st
+import os
+import platform
+import subprocess
+
 
 def format_response(answer, references):
     """
-    Formatta la risposta in Markdown e aggiunge i documenti di riferimento solo se presenti.
+    Formatta la risposta in Markdown e aggiunge i documenti di riferimento con il nome e un pulsante per aprirli.
 
     Parameters:
     - answer (str): Il testo della risposta generata dall'IA.
-    - references (list of str): Un elenco dei nomi dei documenti di riferimento.
+    - references (list of dict): Un elenco di dizionari con dettagli dei documenti di riferimento.
 
     Returns:
-    - str: La risposta formattata in Markdown.
+    - None: La funzione stampa direttamente nella UI di Streamlit.
     """
-    # Normalizza e formatta il testo della risposta
-    formatted_answer = f"### 📝 Risposta\n\n{answer}\n\n---"
+    # Mostra la risposta generata
+    st.markdown(f"### 📝 Risposta\n\n{answer}\n\n---")
 
-    # Aggiungi la sezione dei riferimenti solo se ci sono documenti nella lista
     if references:
-        unique_references = "\n".join([f"- {ref}" for ref in set(references)])
-        references_section = f"\n\n### 📄 Documenti di Riferimento\n{unique_references}\n\n---"
+        st.markdown("### 📄 Documenti di Riferimento")
+        unique_references = {}
+
+        # Filtra i duplicati
+        for ref in references:
+            file_name = ref.get("file_name", "Documento sconosciuto")
+            file_path = ref.get("file_path", None)
+
+            # Controlla che il percorso non sia vuoto e aggiungilo se unico
+            if file_path and file_path not in unique_references:
+                unique_references[file_path] = file_name
+
+        # Crea una riga per ogni documento, con nome e pulsante
+        for file_path, file_name in unique_references.items():
+            col1, col2 = st.columns([4, 1])  # Layout con due colonne
+            with col1:
+                st.markdown(f"**{file_name}**")  # Mostra il nome del file
+            with col2:
+                if os.path.exists(file_path):
+                    # Crea un pulsante per aprire il file
+                    if st.button(f"Apri", key=file_path):
+                        open_file(file_path)
+                else:
+                    st.warning("File non trovato")
     else:
-        references_section = ""
+        st.markdown("Nessun documento di riferimento trovato.")
 
-    # Aggiungi una nota finale, se necessario
-    #note_section = "\n\n_Nota: Le informazioni sono state generate utilizzando i documenti pertinenti._" if references else ""
 
-    # Struttura Markdown finale della risposta
-    full_formatted_answer = f"{formatted_answer}{references_section}"
+def open_file(file_path):
+    """
+    Apre un file utilizzando l'applicazione predefinita del sistema operativo.
 
-    return full_formatted_answer
+    Parameters:
+    - file_path (str): Percorso assoluto del file da aprire.
+
+    Returns:
+    - None
+    """
+    try:
+        if platform.system() == "Windows":
+            os.startfile(file_path)  # Windows
+        else:  # Linux
+            subprocess.call(["xdg-open", file_path])
+    except Exception as e:
+        st.error(f"Errore nell'apertura del file: {e}")
