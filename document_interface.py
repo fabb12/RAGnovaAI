@@ -97,7 +97,6 @@ class DocumentInterface:
                     doc_id = doc["ID Documento"]
                     if col5.button("Elimina", key=f"delete_{doc_id}"):
                         self.doc_manager.delete_document(doc_id)
-                        st.success(f"Documento '{doc['Nome Documento']}' rimosso con successo!")
 
                     if col6.button("Apri", key=f"open_{doc_id}"):
                         self.doc_manager.open_document(doc_id)
