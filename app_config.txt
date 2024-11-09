@@ -1,6 +1,6 @@
-page_title=Pippo Finance Q&A
+page_title=MF Q&A
 page_icon=💬
-header_questions=💬 Fai una Domanda
+header_questions=💬 Fai una Domanda su Master Finance
 header_documents=📁 Gestione Documenti
 sidebar_navigation=📚 Navigazione
 sidebar_history=📜 Cronologia delle Domande

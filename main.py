@@ -9,8 +9,8 @@ from utils.formatter import format_response
 from ui_components import apply_custom_css
 from config import OPENAI_API_KEY, ANTHROPIC_API_KEY, DEFAULT_MODEL
 
-class RAGKnowledgeBaseApp:
-    def __init__(self):
+class FinanceQAApp:
+    def __init__(self, config_file='app_config.txt'):
         # Configura il logging per salvare tutte le domande e risposte
         logging.basicConfig(
             filename="chat_log.txt",
@@ -21,8 +21,15 @@ class RAGKnowledgeBaseApp:
         # Carica le variabili di ambiente dal file `.env`
         load_dotenv()
 
+        # Carica la configurazione dal file txt
+        self.config = self.load_config(config_file)
+
         # Configura la pagina per usare tutta la larghezza disponibile e icona
-        st.set_page_config(page_title="Master Finance Q&A", layout="wide", page_icon="💬")
+        st.set_page_config(
+            page_title=self.config.get('page_title', 'Finance Q&A'),
+            layout="wide",
+            page_icon=self.config.get('page_icon', '💬')
+        )
 
         # Applica il CSS personalizzato
         apply_custom_css()
@@ -40,7 +47,7 @@ class RAGKnowledgeBaseApp:
             st.session_state["current_question"] = ""
 
         # Barra laterale con navigazione e cronologia
-        st.sidebar.title("📚 Navigazione")
+        st.sidebar.title(self.config.get('sidebar_navigation', '📚 Navigazione'))
         self.page = st.sidebar.radio("Vai a:", ["❓ Domande", "🗂️ Gestione Documenti"])
 
         st.sidebar.divider()
@@ -59,6 +66,16 @@ class RAGKnowledgeBaseApp:
         st.sidebar.divider()
         # Mostra la cronologia nella barra laterale
         self.display_history()
+
+    # Funzione per caricare la configurazione dal file txt
+    def load_config(self, filename):
+        config = {}
+        with open(filename, 'r', encoding='utf-8') as f:
+            for line in f:
+                if '=' in line and not line.startswith('#'):
+                    key, value = line.strip().split('=', 1)
+                    config[key.strip()] = value.strip()
+        return config
 
     # Funzione per il logging delle interazioni
     def log_interaction(self, question, context, formatted_context, answer, history):
@@ -101,7 +118,7 @@ class RAGKnowledgeBaseApp:
         Visualizza la cronologia nella barra laterale, in ordine inverso.
         Permette di selezionare una domanda con un menu a tre pallini.
         """
-        st.sidebar.markdown("### 📜 Cronologia delle Domande")
+        st.sidebar.markdown(f"### {self.config.get('sidebar_history', '📜 Cronologia delle Domande')}")
         if st.session_state["history"]:
             for i, entry in enumerate(reversed(st.session_state["history"])):  # Ordine inverso
                 with st.sidebar.expander(f"❓ {entry['question']}", expanded=False):
@@ -113,7 +130,7 @@ class RAGKnowledgeBaseApp:
                                 f"- **{file_name}**",
                                 help=f"Percorso: {file_path}"  # Mostra il tooltip sul nome
                             )
-                    # Aggiungi i tre pallini per selezionare una domanda
+                    # Aggiungi il pulsante per selezionare una domanda
                     if st.button("Usa", key=f"menu_{i}"):
                         st.session_state["current_question"] = entry["question"]
         else:
@@ -122,7 +139,7 @@ class RAGKnowledgeBaseApp:
     def run(self):
         # Sezione Domande e Risposte
         if self.page == "❓ Domande":
-            st.header("💬 Fai una Domanda su Master Finance")
+            st.header(self.config.get('header_questions', "💬 Fai una Domanda"))
             # st.markdown("Inserisci la tua domanda qui sotto per ricevere risposte personalizzate.")
 
             # Configura una riga con colonne per la domanda e il livello di competenza
@@ -131,7 +148,7 @@ class RAGKnowledgeBaseApp:
             with col1:
                 # Precompila il campo della domanda se "Riproposta" è stato cliccato
                 question = st.text_input(
-                    "📝 Inserisci la tua domanda:",
+                    self.config.get('default_question_placeholder', "📝 Inserisci la tua domanda:"),
                     max_chars=500,
                     help="Digita la tua domanda qui",
                     value=st.session_state.get("current_question", "")
@@ -181,11 +198,16 @@ class RAGKnowledgeBaseApp:
 
         # Sezione Gestione Documenti
         elif self.page == "🗂️ Gestione Documenti":
-            st.header("📁 Gestione Documenti")
-            st.markdown("Carica, visualizza e gestisci i documenti nella knowledge base.")
+            st.header(self.config.get('header_documents', "📁 Gestione Documenti"))
+            st.markdown(self.config.get('default_document_message', "Carica, visualizza e gestisci i documenti nella knowledge base."))
             self.doc_interface.show()
+
+    # Funzione principale per eseguire l'app
+    @staticmethod
+    def main():
+        app = FinanceQAApp()
+        app.run()
 
 # Esegui l'applicazione
 if __name__ == "__main__":
-    app = RAGKnowledgeBaseApp()
-    app.run()
+    FinanceQAApp.main()
