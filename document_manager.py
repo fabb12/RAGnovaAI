@@ -15,6 +15,7 @@ class DocumentManager:
             vector_store = create_embeddings([])  # Usa una funzione che crea un nuovo vector store
         self.vector_store = vector_store
         self.init_session_state()
+        self.table_placeholder = st.empty()
 
     def init_session_state(self):
         """Inizializza variabili nel session state."""
@@ -97,6 +98,9 @@ class DocumentManager:
         }
         st.success(f"Documento '{file_name}' aggiunto alla knowledge base con successo!")
 
+        # Aggiorna il session_state per forzare l'aggiornamento della tabella
+        st.session_state["refresh_counter"] += 1  # Incrementa il contatore o un flag
+
     def load_existing_documents(self):
         """Carica i documenti esistenti dal database e li memorizza in `session_state` per evitare duplicati."""
         if self.vector_store and not st.session_state.get("loaded_documents", False):
@@ -115,20 +119,46 @@ class DocumentManager:
                     }
             st.session_state.loaded_documents = True
 
+    def show_documents(self):
+        """Visualizza la tabella dei documenti nella knowledge base."""
+        # Inizializza il refresh_counter se non esiste
+        if "refresh_counter" not in st.session_state:
+            st.session_state["refresh_counter"] = 0
+
+        # Utilizza il refresh_counter per aggiornare la tabella
+        refresh_counter = st.session_state["refresh_counter"]
+
+        self.load_existing_documents()
+        documents = self.get_document_metadata()
+        with self.table_placeholder:
+            if documents:
+                st.table(documents)
+            else:
+                st.info("Nessun documento presente nella knowledge base.")
+
     def delete_document(self, doc_id):
-        """Elimina un documento dal database usando il suo ID."""
+        """Elimina un documento dal database e dal vector store usando il suo ID."""
         try:
             if doc_id in st.session_state.document_names:
-                self.vector_store._collection.delete(ids=[doc_id])
+                # Elimina tutti i vettori associati al documento tramite il filtro sul metadato 'doc_id'
+                self.vector_store._collection.delete(where={"doc_id": doc_id})
                 self.vector_store.persist()
 
                 # Verifica l'eliminazione
-                exists = self.vector_store._collection.get(ids=[doc_id])
-                if exists:
+                exists = self.vector_store._collection.get(
+                    where={"doc_id": doc_id},
+                    include=["metadatas"]
+                )
+                if exists['metadatas']:
                     st.warning(f"Il documento con ID '{doc_id}' non è stato eliminato correttamente.")
                 else:
                     del st.session_state.document_names[doc_id]
                     st.success(f"Documento con ID '{doc_id}' rimosso con successo.")
+
+                    # Aggiorna il session_state per forzare l'aggiornamento della tabella
+                    st.session_state["refresh_counter"] += 1
+            else:
+                st.warning(f"Il documento con ID '{doc_id}' non è presente nella knowledge base.")
         except Exception as e:
             st.error(f"Errore durante l'eliminazione del documento: {e}")
 

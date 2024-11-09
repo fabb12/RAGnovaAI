@@ -102,4 +102,4 @@ class DocumentInterface:
                         self.doc_manager.open_document(doc_id)
 
         # Forza un refresh della pagina per aggiornare la lista dei documenti
-        st.experimental_rerun() if st.session_state.get("refresh_counter") else None
+        #st.experimental_rerun() if st.session_state.get("refresh_counter") else None
