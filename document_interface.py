@@ -46,7 +46,7 @@ class DocumentInterface:
                     "Dimensione Chunk",
                     min_value=100,
                     max_value=2000,
-                    value=500,
+                    value=1024,
                     step=100,
                     help="Dimensione di ogni chunk"
                 )
@@ -55,7 +55,7 @@ class DocumentInterface:
                     "Sovrapposizione Chunk",
                     min_value=0,
                     max_value=500,
-                    value=50,
+                    value=128,
                     step=10,
                     help="Sovrapposizione dei chunk"
                 )

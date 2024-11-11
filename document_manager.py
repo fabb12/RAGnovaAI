@@ -45,7 +45,7 @@ class DocumentManager:
                 return True
         return False
 
-    def add_document(self, file_path, chunk_size=500, chunk_overlap=50):
+    def add_document(self, file_path, chunk_size=1024, chunk_overlap=128):
         """Carica e aggiunge un documento, suddividendolo in chunk e salvandolo nel database."""
 
         if self.vector_store is None:
