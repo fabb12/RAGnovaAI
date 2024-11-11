@@ -1,4 +1,4 @@
-page_title=MF Q&A
+page_title=MF Documentation Retriever
 page_icon=💬
 header_questions=💬 Fai una Domanda su Master Finance
 header_documents=📁 Gestione Documenti

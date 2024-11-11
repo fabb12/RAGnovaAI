@@ -63,6 +63,13 @@ class FinanceQAApp:
             st.sidebar.error("🔑 Chiave API OpenAI non impostata.")
         elif self.model_choice == "Claude (Anthropic)" and not ANTHROPIC_API_KEY:
             st.sidebar.error("🔑 Chiave API Anthropic non impostata.")
+
+        # Divider e pulsante di reset memoria
+        if st.sidebar.button("🔄 Reset Memoria", help="Resetta la domanda e la risposta"):
+            st.session_state["previous_answer"] = ""
+            st.session_state["current_question"] = ""
+            st.sidebar.success("Memoria resettata con successo!")
+
         st.sidebar.divider()
         # Mostra la cronologia nella barra laterale
         self.display_history()

@@ -1,168 +1,173 @@
-/* Impostazioni generali della pagina */
+/* Variabili generiche per i temi */
+:root {
+    --background-color: #ffffff; /* Sfondi neutri (bianco) */
+    --text-color: #000000; /* Testo scuro */
+    --secondary-text-color: #666666; /* Testo secondario */
+    --link-color: #007acc; /* Colore dei link */
+    --button-bg-color: #0056b3; /* Pulsante primario */
+    --button-text-color: #ffffff; /* Testo pulsante */
+    --button-hover-bg-color: #003a75; /* Pulsante hover */
+    --input-bg-color: #f9f9f9; /* Input di testo */
+    --input-text-color: #000000; /* Testo input */
+    --input-border-color: #cccccc; /* Bordo input */
+    --divider-color: #dddddd; /* Divider */
+    --table-header-bg-color: #f1f1f1; /* Header tabelle */
+    --table-row-even-bg-color: #f9f9f9; /* Riga tabella pari */
+    --table-row-odd-bg-color: #ffffff; /* Riga tabella dispari */
+    --success-bg-color: #d4edda; /* Successo */
+    --error-bg-color: #f8d7da; /* Errore */
+    --warning-bg-color: #fff3cd; /* Avviso */
+    --info-bg-color: #d1ecf1; /* Informazione */
+}
+
+/* Tema scuro */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background-color: #121212; /* Sfondo scuro */
+        --text-color: #d3d3d3; /* Testo chiaro */
+        --secondary-text-color: #aaaaaa; /* Testo secondario */
+        --link-color: #80b3ff; /* Link */
+        --button-bg-color: #4a4a4a; /* Pulsante scuro */
+        --button-text-color: #ffffff; /* Testo pulsante */
+        --button-hover-bg-color: #5a5a5a; /* Hover pulsante */
+        --input-bg-color: #2e2e2e; /* Input scuro */
+        --input-text-color: #ffffff; /* Testo input scuro */
+        --input-border-color: #3d3d3d; /* Bordo input scuro */
+        --divider-color: #3d3d3d; /* Divider */
+        --table-header-bg-color: #333333; /* Header tabella scuro */
+        --table-row-even-bg-color: #282828; /* Riga pari scura */
+        --table-row-odd-bg-color: #1f1f1f; /* Riga dispari scura */
+        --success-bg-color: #388e3c; /* Successo */
+        --error-bg-color: #b33a3a; /* Errore */
+        --warning-bg-color: #e6b800; /* Avviso */
+        --info-bg-color: #006064; /* Informazione */
+    }
+}
+
+/* Corpo della pagina */
 body {
-    background-color: #121212;
-    color: #d3d3d3;
+    background-color: var(--background-color);
+    color: var(--text-color);
     font-family: 'Arial', sans-serif;
 }
 
+/* Contenuto principale */
 .stApp {
-    background-color: #121212;
-    color: #d3d3d3;
-}
-
-/* Stile della barra laterale */
-.sidebar .sidebar-content {
-    background-color: #1c1c1c;
-    color: #d3d3d3;
-}
-
-.stSidebar > div {
-    background-color: #1c1c1c;
-}
-
-.stSidebar .stButton button {
-    background-color: #4a4a4a;
-    color: #f1f1f1;
-    border: 1px solid #5a5a5a;
-    border-radius: 6px;
-}
-
-.stSidebar .stButton button:hover {
-    background-color: #5a5a5a;
-    color: #ffffff;
-}
-
-/* Titoli e intestazioni */
-h1, h2, h3, h4 {
-    color: #ffffff;
-}
-
-.stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4 {
-    color: #ffffff;
-}
-
-/* Input di testo */
-.stTextInput > div > div > input {
-    background-color: #2e2e2e;
-    color: #ffffff;
-    border: 1px solid #3d3d3d;
-    border-radius: 6px;
-}
-
-.stTextInput > div > div > input:focus {
-    border-color: #007acc;
-    box-shadow: 0 0 4px #007acc;
-}
-
-/* Stile dei pulsanti */
-.stButton button {
-    background-color: #0056b3;
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
-    padding: 10px 20px;
-    font-weight: bold;
-}
-
-.stButton button:hover {
-    background-color: #004494;
-}
-
-/* Stile dei messaggi di errore, avviso e successo */
-.stAlert {
-    border-radius: 6px;
-    padding: 10px;
-}
-
-.stAlert .stMarkdown {
-    color: #ffffff;
-}
-
-.stAlert[data-baseweb="error"] {
-    background-color: #b33a3a;
-}
-
-.stAlert[data-baseweb="warning"] {
-    background-color: #e6b800;
-    color: #333333;
-}
-
-.stAlert[data-baseweb="info"] {
-    background-color: #006064;
-    color: #ffffff;
-}
-
-.stAlert[data-baseweb="success"] {
-    background-color: #388e3c;
-}
-
-/* Stile per la cronologia e risposte */
-.stSidebar .caption {
-    color: #999999;
-}
-
-.stSidebar .markdown-text-container {
-    color: #bbbbbb;
-}
-
-.stMarkdown p, .stMarkdown ul, .stMarkdown ol {
-    color: #d3d3d3;
-}
-
-/* Divider */
-.css-hr4jb2 hr {
-    background-color: #3d3d3d;
-    border: none;
-    height: 1px;
-    opacity: 0.5;
-}
-
-/* SelectBox per la selezione del modello */
-.stSelectbox > div > div {
-    background-color: #2e2e2e;
-    color: #d3d3d3;
-}
-
-.stSelectbox > div > div:hover {
-    border-color: #007acc;
-    box-shadow: 0 0 4px #007acc;
-}
-
-.stSelectbox .stMarkdown {
-    color: #d3d3d3;
-}
-
-/* Migliora le tabelle */
-.stDataFrame {
-    background-color: #1f1f1f;
-    color: #d3d3d3;
-    border: 1px solid #3d3d3d;
-    border-radius: 6px;
-}
-
-.stDataFrame tr:nth-child(even) {
-    background-color: #282828;
-}
-
-.stDataFrame tr:nth-child(odd) {
-    background-color: #1f1f1f;
-}
-
-.stDataFrame th {
-    background-color: #333333;
-    color: #ffffff;
-}
-
-.stDataFrame td {
-    color: #d3d3d3;
+    background-color: var(--background-color);
+    color: var(--text-color);
 }
 
 /* Link */
-a, a:hover {
-    color: #80b3ff;
+a, a:visited {
+    color: var(--link-color);
     text-decoration: none;
 }
 
 a:hover {
     text-decoration: underline;
+}
+
+/* Pulsanti */
+.stButton button {
+    background-color: var(--button-bg-color);
+    color: var(--button-text-color);
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.stButton button:hover {
+    background-color: var(--button-hover-bg-color);
+}
+
+/* Input di testo */
+.stTextInput > div > div > input {
+    background-color: var(--input-bg-color);
+    color: var(--input-text-color);
+    border: 1px solid var(--input-border-color);
+    border-radius: 6px;
+    padding: 8px;
+}
+
+.stTextInput > div > div > input:focus {
+    border-color: var(--link-color);
+    box-shadow: 0 0 4px var(--link-color);
+}
+
+/* Divider */
+hr {
+    background-color: var(--divider-color);
+    border: none;
+    height: 1px;
+    opacity: 0.5;
+}
+
+/* Tabelle */
+.stDataFrame {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--divider-color);
+    border-radius: 6px;
+}
+
+.stDataFrame tr:nth-child(even) {
+    background-color: var(--table-row-even-bg-color);
+}
+
+.stDataFrame tr:nth-child(odd) {
+    background-color: var(--table-row-odd-bg-color);
+}
+
+.stDataFrame th {
+    background-color: var(--table-header-bg-color);
+    color: var(--text-color);
+    text-align: left;
+    padding: 8px;
+}
+
+.stDataFrame td {
+    color: var(--text-color);
+    padding: 8px;
+}
+
+/* Messaggi di stato */
+.stAlert {
+    border-radius: 6px;
+    padding: 10px;
+    color: var(--text-color);
+}
+
+.stAlert[data-baseweb="error"] {
+    background-color: var(--error-bg-color);
+}
+
+.stAlert[data-baseweb="warning"] {
+    background-color: var(--warning-bg-color);
+}
+
+.stAlert[data-baseweb="info"] {
+    background-color: var(--info-bg-color);
+}
+
+.stAlert[data-baseweb="success"] {
+    background-color: var(--success-bg-color);
+}
+.input-container {
+    display: flex; /* Disposizione flessibile in orizzontale */
+    align-items: center; /* Allineamento verticale al centro */
+    gap: 10px; /* Spazio tra input e pulsante */
+    margin-bottom: 10px; /* Spazio sotto il contenitore */
+}
+
+.input-container .stTextInput {
+    flex: 1; /* Campo di input si espande per occupare tutto lo spazio disponibile */
+}
+
+.input-container .stButton {
+    flex-shrink: 0; /* Pulsante mantiene dimensioni costanti */
+    padding: 0; /* Rimuove padding interno */
+    margin: 0; /* Elimina margini aggiuntivi */
 }
