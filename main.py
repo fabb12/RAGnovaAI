@@ -127,8 +127,10 @@ class FinanceQAApp:
         """
         st.sidebar.markdown(f"### {self.config.get('sidebar_history', '📜 Cronologia delle Domande')}")
         if st.session_state["history"]:
-            for i, entry in enumerate(reversed(st.session_state["history"])):  # Ordine inverso
+            for i, entry in enumerate(
+                    st.session_state["history"]):  # Cronologia già ordinata dal più recente al più vecchio
                 with st.sidebar.expander(f"❓ {entry['question']}", expanded=False):
+                    # Mostra i dettagli della domanda e risposta
                     st.markdown(f"**Risposta:** {entry['answer']}")
                     if entry["references"]:
                         st.markdown("**Riferimenti:**")
@@ -137,9 +139,14 @@ class FinanceQAApp:
                                 f"- **{file_name}**",
                                 help=f"Percorso: {file_path}"  # Mostra il tooltip sul nome
                             )
-                    # Aggiungi il pulsante per selezionare una domanda
-                    if st.button("Usa", key=f"menu_{i}"):
+
+                    # Aggiungi il pulsante per selezionare la domanda
+                    if st.button(f"Usa", key=f"history_button_{i}"):
+                        # Imposta la domanda corrente in base all'entry selezionata
                         st.session_state["current_question"] = entry["question"]
+
+                        # Forza il refresh della pagina per aggiornare il campo di input
+                        #st.experimental_rerun()
         else:
             st.sidebar.info("La cronologia è vuota.")
 
