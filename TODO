@@ -13,3 +13,5 @@ guardare:    """Divide i documenti in chunk più piccoli."""
 
         e questo :    results = db.max_marginal_relevance_search()
     results = db.similarity_search_with_relevance_scores(query_text, k=3)
+
+    giskard
