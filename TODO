@@ -5,3 +5,11 @@ gestire i vari formati dei file
 livello di conoscenza
 metter link per refecnde
 metter riopferimo llm su hitory
+
+guardare:    """Divide i documenti in chunk più piccoli."""
+    #semantic
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size
+
+        e questo :    results = db.max_marginal_relevance_search()
+    results = db.similarity_search_with_relevance_scores(query_text, k=3)
