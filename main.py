@@ -68,6 +68,7 @@ class FinanceQAApp:
         if st.sidebar.button("🔄 Reset Memoria", help="Resetta la domanda e la risposta"):
             st.session_state["previous_answer"] = ""
             st.session_state["current_question"] = ""
+            st.session_state["history"] = []
             st.sidebar.success("Memoria resettata con successo!")
 
         st.sidebar.divider()
@@ -126,27 +127,16 @@ class FinanceQAApp:
         Permette di selezionare una domanda con un menu a tre pallini.
         """
         st.sidebar.markdown(f"### {self.config.get('sidebar_history', '📜 Cronologia delle Domande')}")
-        if st.session_state["history"]:
-            for i, entry in enumerate(
-                    st.session_state["history"]):  # Cronologia già ordinata dal più recente al più vecchio
+        if st.session_state["history"]:  # Controlla che la cronologia non sia vuota
+            for i, entry in enumerate(st.session_state["history"]):
                 with st.sidebar.expander(f"❓ {entry['question']}", expanded=False):
-                    # Mostra i dettagli della domanda e risposta
                     st.markdown(f"**Risposta:** {entry['answer']}")
                     if entry["references"]:
                         st.markdown("**Riferimenti:**")
                         for file_path, file_name in entry["references"]:
-                            st.markdown(
-                                f"- **{file_name}**",
-                                help=f"Percorso: {file_path}"  # Mostra il tooltip sul nome
-                            )
-
-                    # Aggiungi il pulsante per selezionare la domanda
+                            st.markdown(f"- **{file_name}**", help=f"Percorso: {file_path}")
                     if st.button(f"Usa", key=f"history_button_{i}"):
-                        # Imposta la domanda corrente in base all'entry selezionata
                         st.session_state["current_question"] = entry["question"]
-
-                        # Forza il refresh della pagina per aggiornare il campo di input
-                        #st.experimental_rerun()
         else:
             st.sidebar.info("La cronologia è vuota.")
 
