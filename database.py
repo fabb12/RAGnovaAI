@@ -1,7 +1,6 @@
 # database.py
 from langchain.vectorstores import Chroma
-from langchain.embeddings import OpenAIEmbeddings
-
+from langchain_community.embeddings import OpenAIEmbeddings
 CHROMA_PATH = "chroma"
 
 def load_or_create_chroma_db():

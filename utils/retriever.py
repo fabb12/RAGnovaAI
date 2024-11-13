@@ -3,8 +3,9 @@
 from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatOpenAI, ChatAnthropic
 from langchain.prompts import ChatPromptTemplate
-from langchain.vectorstores import Chroma
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_chroma import Chroma
+from langchain_openai import OpenAIEmbeddings
+
 import os
 from langchain_community.llms.anthropic import Anthropic
 from anthropic import  HUMAN_PROMPT, AI_PROMPT
