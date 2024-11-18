@@ -6,6 +6,11 @@ Questo file elenca i problemi noti e le aree di miglioramento per il progetto. G
 
 ## Problemi Noti e Funzionalità Mancanti
 
+### **Integrare funzionalita del progetto RAG GPT**
+--------------------
+
+
+
 ### 1. **Testing RAGAS**
    - **Descrizione**: Integrare un sistema di valutazione con **RAGAS** per testare l'efficacia del motore RAG.
    - **Note**: Questo sarà utile per misurare le prestazioni su diversi knowledge base e modelli di LLM.
