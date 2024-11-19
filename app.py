@@ -38,6 +38,10 @@ class FinanceQAApp:
         self.vector_store = load_or_create_chroma_db()
         self.doc_interface = DocumentInterface(self.vector_store)
 
+        # Configura lo stato del toggle per previous_answer
+        if "use_previous_answer" not in st.session_state:
+            st.session_state["use_previous_answer"] = False  # Disabilitato di default
+
         # Configurazione dello stato della sessione
         if "history" not in st.session_state:
             st.session_state["history"] = []
@@ -64,12 +68,16 @@ class FinanceQAApp:
         elif self.model_choice == "Claude (Anthropic)" and not ANTHROPIC_API_KEY:
             st.sidebar.error("🔑 Chiave API Anthropic non impostata.")
 
-        # Divider e pulsante di reset memoria
-        if st.sidebar.button("🔄 Reset Memoria", help="Resetta la domanda e la risposta"):
+        # Toggle per abilitare o disabilitare l'uso del contesto della risposta precedente
+        st.session_state["use_previous_answer"] = st.sidebar.checkbox(
+            "Usa contesto della risposta precedente",
+            value=st.session_state["use_previous_answer"],
+            help="Attiva per includere la risposta precedente come contesto."
+        )
+
+        # Ripulisce il contesto precedente se il toggle è disabilitato
+        if not st.session_state["use_previous_answer"]:
             st.session_state["previous_answer"] = ""
-            st.session_state["current_question"] = ""
-            st.session_state["history"] = []
-            st.sidebar.success("Memoria resettata con successo!")
 
         st.sidebar.divider()
         # Mostra la cronologia nella barra laterale
@@ -144,13 +152,10 @@ class FinanceQAApp:
         # Sezione Domande e Risposte
         if self.page == "❓ Domande":
             st.header(self.config.get('header_questions', "💬 Fai una Domanda"))
-            # st.markdown("Inserisci la tua domanda qui sotto per ricevere risposte personalizzate.")
 
-            # Configura una riga con colonne per la domanda e il livello di competenza
             col1, col2 = st.columns([3, 1])
 
             with col1:
-                # Precompila il campo della domanda se "Riproposta" è stato cliccato
                 question = st.text_input(
                     self.config.get('default_question_placeholder', "📝 Inserisci la tua domanda:"),
                     max_chars=500,
@@ -167,38 +172,47 @@ class FinanceQAApp:
                 )
 
             if self.vector_store and question:
-                question_with_context = (
-                    f"{st.session_state['previous_answer']} \n\nDomanda attuale: {question}"
-                    if st.session_state["previous_answer"] else question
-                )
+                # Usa il contesto della risposta precedente solo se il toggle è abilitato
+                if st.session_state["use_previous_answer"] and st.session_state["previous_answer"]:
+                    question_with_context = (
+                        f"{st.session_state['previous_answer']} \n\nDomanda attuale: {question}"
+                    )
+                else:
+                    question_with_context = question
 
                 # Esegui la query
                 if self.model_choice == "GPT (OpenAI)" and OPENAI_API_KEY:
                     answer, references = query_rag_with_gpt(question_with_context, expertise_level=expertise_level)
                 elif self.model_choice == "Claude (Anthropic)" and ANTHROPIC_API_KEY:
-                    answer, references, _, _ = query_rag_with_cloud(question_with_context, expertise_level=expertise_level)
+                    answer, references, _, _ = query_rag_with_cloud(question_with_context,
+                                                                    expertise_level=expertise_level)
                 else:
                     answer = "⚠️ La chiave API per il modello selezionato non è disponibile."
                     references = []
 
-                # Mostra la risposta e aggiorna cronologia
+                # Mostra la risposta
                 formatted_answer = format_response(answer, references)
                 st.markdown(formatted_answer)
 
                 # Aggiungi domanda, risposta e riferimenti alla cronologia
                 self.add_to_history(question, answer, references)
 
+
                 # Salva la cronologia nel file di log
                 self.log_interaction(question, question_with_context, question_with_context, answer, st.session_state["history"])
 
-                # Aggiorna l'ultima risposta
-                st.session_state["previous_answer"] = answer
+
+                # Aggiorna l'ultima risposta se il toggle è abilitato
+                if st.session_state["use_previous_answer"]:
+                    st.session_state["previous_answer"] = answer
 
                 # Ripulisci la domanda corrente
                 st.session_state["current_question"] = ""
                 st.divider()
             elif not self.vector_store:
-                st.warning("🚨 Nessuna knowledge base disponibile. Carica un documento nella sezione 'Gestione Documenti'.")
+                st.warning(
+                    "🚨 Nessuna knowledge base disponibile. Carica un documento nella sezione 'Gestione Documenti'.")
+
 
         # Sezione Gestione Documenti
         elif self.page == "🗂️ Gestione Documenti":
