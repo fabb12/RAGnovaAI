@@ -10,5 +10,5 @@ pgvector==0.3.6
 psycopg==3.2.3
 pypandoc==1.14
 python-dotenv==1.0.1
-pywin32==306
+pywin32
 streamlit==1.39.0
