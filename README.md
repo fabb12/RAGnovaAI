@@ -49,7 +49,7 @@ L'utente può inserire una domanda nell'interfaccia principale, e il sistema:
    ```
 3. Eseguire l’app con:
    ```bash
-   streamlit run main.py
+   streamlit run app.py
    ```
 
 ---
