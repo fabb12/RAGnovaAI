@@ -12,3 +12,4 @@ pypandoc==1.14
 python-dotenv==1.0.1
 streamlit==1.39.0
 gunicorn==23.0.0
+pypdf>=3.0
