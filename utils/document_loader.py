@@ -1,14 +1,5 @@
-import os
-import platform
 from langchain.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-import win32com.client as win32
-from tempfile import TemporaryDirectory
-import pythoncom
-
-import shutil
-
-import shutil
 import os
 import pypandoc
 from tempfile import TemporaryDirectory

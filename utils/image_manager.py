@@ -4,7 +4,6 @@ from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from pathlib import Path
 import psycopg
 from pgvector.psycopg import register_vector
-import os
 
 
 class ImageManager:

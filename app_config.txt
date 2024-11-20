@@ -1,6 +1,6 @@
-page_title=MF Documentation Retriever
+page_title=APP Documentation Retriever
 page_icon=💬
-header_questions=💬 Fai una Domanda su Master Finance
+header_questions=💬 Fai una Domanda sul knowledge base
 header_documents=📁 Gestione Documenti
 sidebar_navigation=📚 Navigazione
 sidebar_history=📜 Cronologia delle Domande
