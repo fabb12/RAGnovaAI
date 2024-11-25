@@ -8,7 +8,7 @@ Questo file elenca i problemi noti e le aree di miglioramento per il progetto. G
 
 ### **Integrare funzionalita del progetto RAG GPT**
 --------------------
-
+https://github.com/bRAGAI/bRAG-langchain/
 mettere gestione delle foto 
 ### 1. **Testing RAGAS**
    - **Descrizione**: Integrare un sistema di valutazione con **RAGAS** per testare l'efficacia del motore RAG.
