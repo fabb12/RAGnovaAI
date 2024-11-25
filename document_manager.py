@@ -203,6 +203,22 @@ class DocumentManager:
                     }
             st.session_state.loaded_documents = True
 
+    def truncate_text(self, text, max_length=50):
+        """
+        Trunca un testo se supera la lunghezza massima specificata.
+        Aggiunge '...' alla fine per indicare il troncamento.
+
+        Parameters:
+        - text (str): Il testo da troncate.
+        - max_length (int): La lunghezza massima.
+
+        Returns:
+        - str: Il testo troncato.
+        """
+        if len(text) > max_length:
+            return text[:max_length] + "..."
+        return text
+
     def show_documents(self):
         """Visualizza la tabella dei documenti nella knowledge base."""
         # Inizializza il refresh_counter se non esiste
@@ -215,12 +231,14 @@ class DocumentManager:
         self.load_existing_documents()
         documents = self.get_document_metadata()
         with self.table_placeholder:
+            # ---- Visualizzazione della Tabella Documenti ----
             if documents:
                 st.markdown("---")
                 st.markdown("### 📑 Documenti nella Knowledge Base")
 
-                header_cols = st.columns([2, 1.5, 2, 1.5, 1.5, 1])
-                headers = ["Nome Documento", "Tipo", "Fonte", "Dimensione (KB)", "Data Caricamento", "Azioni"]
+                header_cols = st.columns([2, 1.5, 2, 1.5, 1.5, 1, 1])
+                headers = ["Nome Documento", "Tipo", "Fonte", "Dimensione (KB)", "Data Caricamento", "Elimina",
+                           "Apri Risorsa"]
                 for header, col in zip(headers, header_cols):
                     col.markdown(f"**{header}**")
 
@@ -230,21 +248,37 @@ class DocumentManager:
                 for idx, doc in enumerate(documents):
                     row_color = row_colors[idx % 2]
                     with st.container():
-                        col1, col2, col3, col4, col5, col6 = st.columns([2, 1.5, 2, 1.5, 1.5, 1])
+                        # Allinea le colonne con proporzioni corrette
+                        col1, col2, col3, col4, col5, col6, col7 = st.columns([2, 1.5, 2, 1.5, 1.5, 1, 1])
 
+                        # Inserisce i dati nelle colonne, usando truncate_text per gestire i testi lunghi
                         for col, text in zip(
                                 [col1, col2, col3, col4, col5],
-                                [doc["Nome Documento"], doc["Tipo"], doc["Fonte"], doc["Dimensione (KB)"],
-                                 doc["Data Caricamento"]]
+                                [
+                                    self.truncate_text(doc["Nome Documento"]),
+                                    self.truncate_text(doc["Tipo"]),
+                                    self.truncate_text(doc["Fonte"], max_length=30),
+                                    doc["Dimensione (KB)"],
+                                    doc["Data Caricamento"]
+                                ]
                         ):
                             col.markdown(
                                 f'<div style="background-color: {row_color}; color: {text_color}; padding: 5px;">{text}</div>',
                                 unsafe_allow_html=True
                             )
 
-                        doc_id = doc["ID Documento"]
-                        if col6.button("Elimina", key=f"delete_{doc_id}"):
-                            self.delete_document(doc_id)
+                        # Pulsante "Elimina"
+                        if col6.button("Elimina", key=f"delete_{doc['ID Documento']}"):
+                            self.doc_manager.delete_document(doc["ID Documento"])
+
+                        # Pulsante "Apri Risorsa"
+                        if col7.button("Apri Risorsa", key=f"open_{doc['ID Documento']}"):
+                            if doc["Tipo"] == "Web":
+                                st.info(f"Apertura URL: {doc['Fonte']}")
+                                st.markdown(f"[Apri in una nuova scheda]({doc['Fonte']})", unsafe_allow_html=True)
+                            else:
+                                self.doc_manager.open_document(doc["ID Documento"])
+
             else:
                 st.info("Nessun documento presente nella knowledge base.")
 
