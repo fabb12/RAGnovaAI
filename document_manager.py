@@ -3,11 +3,15 @@ import os
 import uuid
 import hashlib
 from datetime import datetime
-from utils.embeddings import create_embeddings
-from utils.document_loader import load_document, split_text  # Per gestione documenti e chunk
-
+from utils.processing.embeddings import create_embeddings
+from utils.loaders.document_loader import load_document, split_text  # Per gestione documenti e chunk
+import validators
+from langchain.document_loaders import UnstructuredURLLoader
+import requests
+from bs4 import BeautifulSoup
 class DocumentManager:
-    ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt"}
+    ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt", ".csv"}
+    WEB_DOCUMENT_ID_PREFIX = "web_"  # Prefisso per documenti caricati da URL
 
     def __init__(self, vector_store):
         if vector_store is None:
@@ -34,72 +38,152 @@ class DocumentManager:
                 hash_md5.update(chunk)
         return hash_md5.hexdigest()
 
-    def document_exists(self, file_hash):
-        """Controlla se un documento con lo stesso hash è già presente nel database."""
+    def document_exists(self, file_hash=None, url=None):
+        """Controlla se un documento con lo stesso hash o URL è già presente nel database."""
         if not self.vector_store or not hasattr(self.vector_store, '_collection'):
-            st.error("Il vector store non è inizializzato.")
-            return False  # Oppure alza un'eccezione specifica
+            return False
+
         results = self.vector_store._collection.get(include=["metadatas"])
         for metadata in results["metadatas"]:
-            if metadata.get("file_hash") == file_hash:
+            if file_hash and metadata.get("file_hash") == file_hash:
+                return True
+            if url and metadata.get("source_url") == url:
                 return True
         return False
 
-    def add_document(self, file_path, chunk_size=1024, chunk_overlap=128):
-        """Carica e aggiunge un documento, suddividendolo in chunk e salvandolo nel database."""
+    def add_document(self, file_path_or_url, chunk_size=1024, chunk_overlap=128):
+        """
+        Carica e aggiunge un documento (locale o URL) al vector store.
+        """
+        if isinstance(file_path_or_url, list):
+            for single_path in file_path_or_url:
+                self.add_document(single_path, chunk_size, chunk_overlap)
+            return
 
-        if self.vector_store is None:
-            self.vector_store = create_embeddings([])  # Inizializza un nuovo vector store
+        if validators.url(file_path_or_url):
+            self.add_web_document(file_path_or_url, chunk_size, chunk_overlap)
+            return
 
+        self.add_local_document(file_path_or_url, chunk_size, chunk_overlap)
+
+    def add_local_document(self, file_path, chunk_size=1024, chunk_overlap=128):
+        """
+        Carica e aggiunge un documento locale suddividendolo in chunk.
+        """
         file_name = os.path.basename(file_path)
         file_hash = self.calculate_file_hash(file_path)
         abs_file_path = os.path.abspath(file_path)
 
-        # Verifica duplicati
         if self.document_exists(file_hash):
-            st.warning(f"Il documento '{file_name}' è già presente nel database.")
+            st.warning(f"Il documento '{file_name}' è già presente nella knowledge base.")
             return
 
+        try:
+            data = load_document(file_path)
+            if not data:
+                st.error(f"Errore: Impossibile caricare il documento '{file_name}'.")
+                return
+
+            chunks = split_text(data, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+            if not chunks:
+                st.error(f"Errore: Il documento '{file_name}' non può essere suddiviso in chunk.")
+                return
+
+            doc_id = str(uuid.uuid4())
+            for chunk in chunks:
+                chunk.metadata.update({
+                    "doc_id": doc_id,
+                    "file_name": file_name,
+                    "file_size": os.path.getsize(file_path) / 1024,
+                    "creation_date": datetime.fromtimestamp(os.path.getctime(file_path)).strftime("%Y-%m-%d %H:%M:%S"),
+                    "upload_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "file_hash": file_hash,
+                    "file_path": abs_file_path,
+                })
+
+            self.vector_store.add_documents(chunks)
+            self.vector_store.persist()
+            st.session_state["refresh_counter"] += 1
+            st.success(f"Documento '{file_name}' aggiunto con successo!")
+        except Exception as e:
+            st.error(f"Errore durante l'elaborazione del documento '{file_name}': {e}")
+
+    def fetch_web_content(self, url):
+        """Scarica e analizza il contenuto di una pagina web."""
+
+
+        try:
+            response = requests.get(url, headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"
+            })
+
+            if "text/html" not in response.headers.get("Content-Type", ""):
+                st.error("Errore: Il contenuto dell'URL non è un documento HTML leggibile.")
+                return None
+
+
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            # Estrarre solo il testo visibile
+            text = soup.get_text(separator="\n", strip=True)
+            return text
+        except Exception as e:
+            st.error(f"Errore durante il caricamento del contenuto: {e}")
+            return None
+
+    def add_web_document(self, url, chunk_size=1024, chunk_overlap=128):
+        """
+        Scarica il contenuto di un sito web, lo divide in chunk e lo aggiunge alla knowledge base.
+        """
+        if not validators.url(url):
+            st.error("URL non valido. Inserisci un URL corretto.")
+            return
+
+        # Scaricare il contenuto web usando fetch_web_content
+        web_content = self.fetch_web_content(url)
+        if not web_content:
+            st.error(f"Errore: Nessun contenuto trovato per l'URL: {url}")
+            return
+
+        # Creare un documento simulato
+        documents = [{"page_content": web_content.strip(), "metadata": {"source_url": url}}]
+
+        # Convertire in oggetti compatibili con split_text
+        class Document:
+            def __init__(self, page_content, metadata):
+                self.page_content = page_content
+                self.metadata = metadata
+
+        formatted_documents = [Document(doc["page_content"], doc["metadata"]) for doc in documents]
+
+        # Suddividere in chunk
         doc_id = str(uuid.uuid4())
-        file_size = os.path.getsize(file_path) / 1024
-        creation_date = datetime.fromtimestamp(os.path.getctime(file_path)).strftime("%Y-%m-%d %H:%M:%S")
         upload_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        chunks = split_text(formatted_documents, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
-        # Carica e divide il contenuto del documento in chunk personalizzati
-        data = load_document(file_path)
-        if not data:
+        if not chunks:
+            st.warning(f"Avviso: Il contenuto di '{url}' è troppo breve per essere suddiviso in chunk.")
             return
-        chunks = split_text(data, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
-        # Aggiungi ogni chunk al database con i metadati del documento
+        # Aggiungere i chunk al vector store
         for chunk in chunks:
             chunk.metadata.update({
                 "doc_id": doc_id,
-                "file_name": file_name,
-                "file_size": file_size,
-                "creation_date": creation_date,
+                "file_name": "Contenuto Web",
+                "file_size": len(chunk.page_content) / 1024,  # Dimensione in KB
+                "creation_date": "N/A",
                 "upload_date": upload_date,
-                "file_hash": file_hash,
-                "file_path": abs_file_path
+                "source_url": url,
             })
 
-        # Aggiungi i chunk al database
-        if self.vector_store is None:
-            self.vector_store = create_embeddings(chunks)
-        else:
+        try:
             self.vector_store.add_documents(chunks)
-        self.vector_store.persist()
-
-        # Aggiorna `session_state`
-        st.session_state.document_names[doc_id] = {
-            "file_name": file_name,
-            "file_hash": file_hash,
-            "file_path": abs_file_path
-        }
-        st.success(f"Documento '{file_name}' aggiunto alla knowledge base con successo!")
-
-        # Aggiorna il session_state per forzare l'aggiornamento della tabella
-        st.session_state["refresh_counter"] += 1  # Incrementa il contatore o un flag
+            self.vector_store.persist()
+            st.success(f"Contenuto da '{url}' aggiunto con successo!")
+            st.session_state["refresh_counter"] += 1
+        except Exception as e:
+            st.error(f"Errore durante l'aggiunta del documento web: {e}")
 
     def load_existing_documents(self):
         """Carica i documenti esistenti dal database e li memorizza in `session_state` per evitare duplicati."""
@@ -132,7 +216,35 @@ class DocumentManager:
         documents = self.get_document_metadata()
         with self.table_placeholder:
             if documents:
-                st.table(documents)
+                st.markdown("---")
+                st.markdown("### 📑 Documenti nella Knowledge Base")
+
+                header_cols = st.columns([2, 1.5, 2, 1.5, 1.5, 1])
+                headers = ["Nome Documento", "Tipo", "Fonte", "Dimensione (KB)", "Data Caricamento", "Azioni"]
+                for header, col in zip(headers, header_cols):
+                    col.markdown(f"**{header}**")
+
+                row_colors = ["#2a2a2a", "#3d3d3d"]
+                text_color = "#e0e0e0"
+
+                for idx, doc in enumerate(documents):
+                    row_color = row_colors[idx % 2]
+                    with st.container():
+                        col1, col2, col3, col4, col5, col6 = st.columns([2, 1.5, 2, 1.5, 1.5, 1])
+
+                        for col, text in zip(
+                                [col1, col2, col3, col4, col5],
+                                [doc["Nome Documento"], doc["Tipo"], doc["Fonte"], doc["Dimensione (KB)"],
+                                 doc["Data Caricamento"]]
+                        ):
+                            col.markdown(
+                                f'<div style="background-color: {row_color}; color: {text_color}; padding: 5px;">{text}</div>',
+                                unsafe_allow_html=True
+                            )
+
+                        doc_id = doc["ID Documento"]
+                        if col6.button("Elimina", key=f"delete_{doc_id}"):
+                            self.delete_document(doc_id)
             else:
                 st.info("Nessun documento presente nella knowledge base.")
 
@@ -163,7 +275,7 @@ class DocumentManager:
             st.error(f"Errore durante l'eliminazione del documento: {e}")
 
     def get_document_metadata(self):
-        """Recupera i metadati dei documenti per la visualizzazione nella tabella."""
+        """Recupera i metadati dei documenti per la visualizzazione nella knowledge base."""
         if not self.vector_store:
             return []
 
@@ -172,16 +284,22 @@ class DocumentManager:
         seen_hashes = set()
 
         for metadata in results["metadatas"]:
-            file_hash = metadata.get("file_hash")
-            if file_hash not in seen_hashes:
-                seen_hashes.add(file_hash)
+            doc_id = metadata.get("doc_id")
+            if doc_id not in seen_hashes:
+                seen_hashes.add(doc_id)
+                fonte = metadata.get("source_url", metadata.get("file_path", "N/A"))
+
+                # Rendi la colonna "Fonte" cliccabile se è un URL
+                if validators.url(fonte):
+                    fonte = f"[Apri URL]({fonte})"
+
                 documents.append({
-                    "ID Documento": metadata.get("doc_id"),
+                    "ID Documento": doc_id,
                     "Nome Documento": metadata.get("file_name", "Senza Nome"),
-                    "Dimensione (KB)": f"{metadata.get('file_size', 0):.2f} KB",
-                    "Data Creazione": metadata.get("creation_date", "N/A"),
+                    "Tipo": "Web" if metadata.get("source_url") else "File",
+                    "Fonte": fonte,
+                    "Dimensione (KB)": f"{metadata.get('file_size', 0):.2f}",
                     "Data Caricamento": metadata.get("upload_date", "N/A"),
-                    "Percorso Assoluto": metadata.get("file_path")
                 })
         return documents
 

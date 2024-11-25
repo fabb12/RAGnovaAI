@@ -2,6 +2,7 @@ import os
 import streamlit as st
 from document_manager import DocumentManager
 from ui_components import apply_custom_css
+import validators
 
 
 class DocumentInterface:
@@ -27,6 +28,18 @@ class DocumentInterface:
             saved_files.append(file_path)
 
         return saved_files
+
+    def add_web_document(self, url, chunk_size=1024, chunk_overlap=128):
+        """
+        Wrapper per chiamare la funzione `add_web_document` in `DocumentManager`.
+        """
+        try:
+            message = self.doc_manager.add_web_document(url, chunk_size, chunk_overlap)
+            st.success(message)
+        except ValueError as ve:
+            st.error(f"Errore: {ve}")
+        except Exception as e:
+            st.error(f"Errore durante l'aggiunta del documento web: {e}")
 
     def show(self):
         apply_custom_css()
@@ -80,13 +93,23 @@ class DocumentInterface:
                     )
                 st.success(f"Caricati {len(saved_files)} documenti con successo!")
 
+            # ---- Input per URL ----
+            st.markdown("### 🌐 Carica Sito Web")
+            url_input = st.text_input("Inserisci l'URL del sito web", placeholder="https://esempio.com")
+            if st.button("Carica Sito Web"):
+                if url_input:
+                    self.add_web_document(url_input, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+                else:
+                    st.warning("Inserisci un URL valido prima di caricare.")
+
         # ---- Visualizzazione della Tabella Documenti ----
         if documents:
             st.markdown("---")
             st.markdown("### 📑 Documenti nella Knowledge Base")
 
-            header_cols = st.columns([2, 1.5, 1.5, 1.5, 1, 1])
-            headers = ["Nome Documento", "Dimensione (KB)", "Data Creazione", "Data Caricamento", "Azione", "Apri"]
+            header_cols = st.columns([2, 1.5, 1.5, 1.5, 1, 1, 1])
+            headers = ["Nome Documento", "Tipo", "Fonte", "Dimensione (KB)", "Data Caricamento", "Elimina",
+                       "Apri Risorsa"]
             for header, col in zip(headers, header_cols):
                 col.markdown(f"**{header}**")
 
@@ -96,18 +119,30 @@ class DocumentInterface:
             for idx, doc in enumerate(documents):
                 row_color = row_colors[idx % 2]
                 with st.container():
-                    col1, col2, col3, col4, col5, col6 = st.columns([2, 1.5, 1.5, 1.5, 1, 1])
+                    # Allinea le colonne con proporzioni corrette
+                    col1, col2, col3, col4, col5, col6, col7 = st.columns([2, 1.5, 2, 1.5, 1.5, 1, 1])
 
-                    for col, text in zip([col1, col2, col3, col4],
-                                         [doc["Nome Documento"], doc["Dimensione (KB)"], doc["Data Creazione"],
-                                          doc["Data Caricamento"]]):
+                    # Inserisce i dati nelle colonne
+                    for col, text in zip(
+                            [col1, col2, col3, col4, col5],
+                            [doc["Nome Documento"], doc["Tipo"], doc["Fonte"], doc["Dimensione (KB)"],
+                             doc["Data Caricamento"]]
+                    ):
                         col.markdown(
                             f'<div style="background-color: {row_color}; color: {text_color}; padding: 5px;">{text}</div>',
-                            unsafe_allow_html=True)
+                            unsafe_allow_html=True
+                        )
 
-                    doc_id = doc["ID Documento"]
-                    if col5.button("Elimina", key=f"delete_{doc_id}"):
-                        self.doc_manager.delete_document(doc_id)
+                    # Pulsante "Elimina"
+                    if col6.button("Elimina", key=f"delete_{doc['ID Documento']}"):
+                        self.doc_manager.delete_document(doc["ID Documento"])
 
-                    if col6.button("Apri", key=f"open_{doc_id}"):
-                        self.doc_manager.open_document(doc_id)
+                    # Pulsante "Apri Risorsa"
+                    if col7.button("Apri Risorsa", key=f"open_{doc['ID Documento']}"):
+                        if doc["Tipo"] == "Web":
+                            st.info(f"Apertura URL: {doc['Fonte']}")
+                            st.markdown(f"[Apri in una nuova scheda]({doc['Fonte']})", unsafe_allow_html=True)
+                        else:
+                            self.doc_manager.open_document(doc["ID Documento"])
+
+

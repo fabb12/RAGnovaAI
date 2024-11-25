@@ -1,17 +1,13 @@
 # utils/retriever.py
 
-from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatOpenAI, ChatAnthropic
 from langchain.prompts import ChatPromptTemplate
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
-
-import os
 from langchain_community.llms.anthropic import Anthropic
-from anthropic import  HUMAN_PROMPT, AI_PROMPT
-import os
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 import os
+import random
 
 # Percorso per il database Chroma
 CHROMA_PATH = "chroma"
@@ -51,6 +47,68 @@ Note: Answer in the language of the user’s question.
 OUT_OF_CONTEXT_RESPONSES = [
     "Non lo so",
 ]
+import random
+
+def generate_sample_questions(vector_store, num_documents=3, num_questions=3):
+    """
+    Genera un set di domande di esempio prendendo un campione casuale dai documenti.
+    """
+    if not vector_store or not hasattr(vector_store, "_collection"):
+        return []
+
+    # Recupera i documenti e i metadati
+    all_documents = vector_store._collection.get(include=["metadatas", "documents"])
+    if not all_documents or "metadatas" not in all_documents or "documents" not in all_documents:
+        return []
+
+    # Combina documenti e metadati in un unico insieme
+    combined_docs = [
+        {"content": doc, "metadata": meta}
+        for doc, meta in zip(all_documents["documents"], all_documents["metadatas"])
+        if doc is not None  # Assicurati che il contenuto non sia vuoto
+    ]
+
+    # Campiona un numero specificato di documenti
+    sampled_docs = random.sample(combined_docs, min(num_documents, len(combined_docs)))
+
+    # Genera domande di esempio basate sul contenuto
+    sample_questions = []
+    for doc in sampled_docs:
+        content = doc["content"]
+        if content:
+            questions = _generate_questions_from_text(content, num_questions)
+            sample_questions.extend(questions)
+
+    # Limita il numero totale di domande generate
+    return sample_questions[:num_questions]
+
+
+def _generate_questions_from_text(content, num_questions):
+    """
+    Genera domande colloquiali da un testo usando euristiche.
+
+    Parameters:
+    - content (str): il testo di input.
+    - num_questions (int): numero di domande da generare.
+
+    Returns:
+    - List[str]: una lista di domande generate.
+    """
+    sentences = content.split(". ")
+    questions = []
+
+    for sentence in sentences[:num_questions]:
+        if 20 < len(sentence) <= 300:  # Filtra frasi troppo corte o lunghe
+            sentence = sentence.strip()
+            # Genera domande colloquiali
+            question_templates = [
+                f"Puoi spiegarmi cosa significa: '{sentence}'?",
+                f"Come posso utilizzare: '{sentence}'?",
+                f"Che cosa succede se: '{sentence}'?"
+            ]
+            # Scegli una domanda casuale tra i template
+            questions.append(random.choice(question_templates))
+    return questions
 
 def query_rag_with_gpt(query_text, expertise_level="expert"):
     """
