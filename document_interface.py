@@ -41,6 +41,9 @@ class DocumentInterface:
         except Exception as e:
             st.error(f"Errore durante l'aggiunta del documento web: {e}")
 
+    def truncate_text(self, text, max_length=30):
+        return text if len(text) <= max_length else text[:max_length] + "..."
+
     def show(self):
         apply_custom_css()
 
@@ -122,16 +125,32 @@ class DocumentInterface:
                     # Allinea le colonne con proporzioni corrette
                     col1, col2, col3, col4, col5, col6, col7 = st.columns([2, 1.5, 2, 1.5, 1.5, 1, 1])
 
-                    # Inserisce i dati nelle colonne
-                    for col, text in zip(
-                            [col1, col2, col3, col4, col5],
-                            [doc["Nome Documento"], doc["Tipo"], doc["Fonte"], doc["Dimensione (KB)"],
-                             doc["Data Caricamento"]]
-                    ):
-                        col.markdown(
-                            f'<div style="background-color: {row_color}; color: {text_color}; padding: 5px;">{text}</div>',
-                            unsafe_allow_html=True
-                        )
+                    # Nome Documento e altre informazioni
+                    col1.markdown(
+                        f'<div style="background-color: {row_color}; color: {text_color}; padding: 5px;">{doc["Nome Documento"]}</div>',
+                        unsafe_allow_html=True
+                    )
+                    col2.markdown(
+                        f'<div style="background-color: {row_color}; color: {text_color}; padding: 5px;">{doc["Tipo"]}</div>',
+                        unsafe_allow_html=True
+                    )
+
+                    # Colonna Fonte con testo troncato e tooltip
+                    fonte_troncata = self.truncate_text(doc["Fonte"], max_length=30)
+                    col3.markdown(
+                        f'<div style="background-color: {row_color}; color: {text_color}; padding: 5px;" title="{doc["Fonte"]}">{fonte_troncata}</div>',
+                        unsafe_allow_html=True
+                    )
+
+                    # Dimensione e Data Caricamento
+                    col4.markdown(
+                        f'<div style="background-color: {row_color}; color: {text_color}; padding: 5px;">{doc["Dimensione (KB)"]}</div>',
+                        unsafe_allow_html=True
+                    )
+                    col5.markdown(
+                        f'<div style="background-color: {row_color}; color: {text_color}; padding: 5px;">{doc["Data Caricamento"]}</div>',
+                        unsafe_allow_html=True
+                    )
 
                     # Pulsante "Elimina"
                     if col6.button("Elimina", key=f"delete_{doc['ID Documento']}"):
@@ -144,5 +163,3 @@ class DocumentInterface:
                             st.markdown(f"[Apri in una nuova scheda]({doc['Fonte']})", unsafe_allow_html=True)
                         else:
                             self.doc_manager.open_document(doc["ID Documento"])
-
-
