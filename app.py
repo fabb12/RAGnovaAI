@@ -160,6 +160,10 @@ class FinanceQAApp:
         if self.page == "❓ Domande":
             st.header(self.config.get('header_questions', "💬 Fai una Domanda"))
 
+            # Mostra la knowledge base selezionata
+            selected_kb = st.session_state.get("selected_kb", "Nessuna Knowledge Base selezionata")
+            st.markdown(f"**Knowledge Base selezionata:** {selected_kb}")
+
             col1, col2 = st.columns([3, 1])
 
             with col1:
@@ -178,13 +182,14 @@ class FinanceQAApp:
                     help="Scegli il livello per adattare il dettaglio della risposta."
                 )
 
+
             if validators.url(question):  # Controlla se l'input è un URL
                 st.info("Riconosciuto come URL. Caricamento contenuti dal sito web...")
                 web_content = self.load_web_content(question)
 
                 if web_content:
                     st.success("Contenuto web caricato correttamente.")
-                    self.doc_interface.add_documents(web_content)
+                    self.doc_interface.add_web_document(web_content)
                 else:
                     st.error("Impossibile caricare il contenuto dal sito web.")
             elif self.vector_store and question:
@@ -198,6 +203,15 @@ class FinanceQAApp:
 
                 # Esegui la query
                 if self.vector_store and question:
+                    # Usa il contesto della risposta precedente se abilitato
+                    if st.session_state["use_previous_answer"] and st.session_state["previous_answer"]:
+                        question_with_context = (
+                            f"{st.session_state['previous_answer']} \n\nDomanda attuale: {question}"
+                        )
+                    else:
+                        question_with_context = question
+
+                    # Esegui la query utilizzando il vector_store della KB selezionata
                     if self.model_choice == "GPT (OpenAI)" and OPENAI_API_KEY:
                         answer, references = query_rag_with_gpt(question_with_context, self.vector_store,
                                                                 expertise_level=expertise_level)
@@ -207,6 +221,8 @@ class FinanceQAApp:
                     else:
                         answer = "⚠️ La chiave API per il modello selezionato non è disponibile."
                         references = []
+
+                    # ... Resto del codice per mostrare la risposta ...
 
                 # Mostra la risposta
                 formatted_answer = format_response(answer, references)

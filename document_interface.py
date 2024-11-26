@@ -50,7 +50,6 @@ class DocumentInterface:
         self.vector_store = load_or_create_chroma_db(kb_name)
         self.doc_manager.vector_store = self.vector_store
 
-
     def show(self):
         apply_custom_css()
 
@@ -67,7 +66,6 @@ class DocumentInterface:
         else:
             st.info("Non ci sono Knowledge Base disponibili. Creane una nuova.")
 
-        st.markdown("---")
         # Creazione di una nuova knowledge base
         new_kb_name = st.text_input("Crea una nuova Knowledge Base", value="")
         if st.button("Crea"):
