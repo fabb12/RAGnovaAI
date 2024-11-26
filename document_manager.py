@@ -15,7 +15,6 @@ class DocumentManager:
 
     def __init__(self, vector_store):
         if vector_store is None:
-            # Creare un nuovo vector store se non esiste
             vector_store = create_embeddings([])  # Usa una funzione che crea un nuovo vector store
         self.vector_store = vector_store
         self.init_session_state()

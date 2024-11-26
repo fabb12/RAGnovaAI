@@ -3,6 +3,7 @@ import streamlit as st
 from document_manager import DocumentManager
 from ui_components import apply_custom_css
 import validators
+from database import load_or_create_chroma_db
 
 
 class DocumentInterface:
@@ -44,8 +45,48 @@ class DocumentInterface:
     def truncate_text(self, text, max_length=30):
         return text if len(text) <= max_length else text[:max_length] + "..."
 
+    def initialize_vector_store(self):
+        kb_name = st.session_state.get("selected_kb", "default")
+        self.vector_store = load_or_create_chroma_db(kb_name)
+        self.doc_manager.vector_store = self.vector_store
+
+
     def show(self):
         apply_custom_css()
+
+        # ---- Sezione per la Gestione delle Knowledge Base ----
+        # Carica le knowledge base esistenti
+        kb_list = st.session_state.get("knowledge_bases", [])
+        selected_kb = st.session_state.get("selected_kb", None)
+
+        # Selezione della knowledge base
+        if kb_list:
+            selected_kb = st.selectbox("Seleziona Knowledge Base", kb_list,
+                                       index=kb_list.index(selected_kb) if selected_kb in kb_list else 0)
+            st.session_state["selected_kb"] = selected_kb
+        else:
+            st.info("Non ci sono Knowledge Base disponibili. Creane una nuova.")
+
+        st.markdown("---")
+        # Creazione di una nuova knowledge base
+        new_kb_name = st.text_input("Crea una nuova Knowledge Base", value="")
+        if st.button("Crea"):
+            if new_kb_name:
+                if new_kb_name not in kb_list:
+                    kb_list.append(new_kb_name)
+                    st.session_state["knowledge_bases"] = kb_list
+                    st.session_state["selected_kb"] = new_kb_name
+                    st.success(f"Knowledge Base '{new_kb_name}' creata e selezionata.")
+                    # Re-inizializza il vector store con la nuova KB
+                    self.initialize_vector_store()
+                else:
+                    st.warning("Una Knowledge Base con questo nome esiste già.")
+            else:
+                st.warning("Inserisci un nome per la nuova Knowledge Base.")
+
+        # Inizializza il vector store se non è già stato fatto
+        if not hasattr(self, 'vector_store') or self.vector_store is None:
+            self.initialize_vector_store()
 
         # Carica documenti esistenti nel database e aggiorna `session_state`
         self.doc_manager.load_existing_documents()

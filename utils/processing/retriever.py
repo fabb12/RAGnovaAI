@@ -111,7 +111,7 @@ def _generate_questions_from_text(content, num_questions):
             questions.append(random.choice(question_templates))
     return questions
 
-def query_rag_with_gpt(query_text, expertise_level="expert"):
+def query_rag_with_gpt(query_text, vector_store, expertise_level="expert"):
     """
     Executes a query on the Chroma database and retrieves a context-enriched response.
     Returns the generated response and a list of relevant document references with paths.
@@ -150,7 +150,7 @@ def query_rag_with_gpt(query_text, expertise_level="expert"):
     return response_text, references
 
 
-def query_rag_with_cloud(query_text, expertise_level="expert"):
+def query_rag_with_cloud(query_text, vector_store, expertise_level="expert"):
     """
     Executes a query on the Chroma database and retrieves a context-enhanced response
     using Anthropic's SDK with the specified model.

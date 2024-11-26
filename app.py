@@ -9,7 +9,7 @@ from utils.formatting.formatter import format_response
 from ui_components import apply_custom_css
 from config import OPENAI_API_KEY, ANTHROPIC_API_KEY, DEFAULT_MODEL
 from langchain_community.document_loaders import WebBaseLoader  # Per caricare contenuti web
-
+import os
 
 class FinanceQAApp:
     def __init__(self, config_file='app_config.txt'):
@@ -36,9 +36,21 @@ class FinanceQAApp:
         # Applica il CSS personalizzato
         apply_custom_css()
 
-        # Inizializza il database e l'interfaccia documenti
-        self.vector_store = load_or_create_chroma_db()
+
+        # Inizializza le knowledge base
+        if "knowledge_bases" not in st.session_state:
+            kb_list = [name.replace("chroma_", "") for name in os.listdir(".") if name.startswith("chroma_")]
+            st.session_state["knowledge_bases"] = kb_list
+        if "selected_kb" not in st.session_state:
+            st.session_state["selected_kb"] = st.session_state["knowledge_bases"][0] if st.session_state["knowledge_bases"] else None
+
+
+
+        # Inizializza il vector store per la KB selezionata
+        self.vector_store = load_or_create_chroma_db(st.session_state["selected_kb"])
         self.doc_interface = DocumentInterface(self.vector_store)
+        self.doc_interface.vector_store = self.vector_store
+        self.doc_interface.doc_manager.vector_store = self.vector_store
 
         # Configura lo stato del toggle per previous_answer
         if "use_previous_answer" not in st.session_state:
@@ -185,13 +197,16 @@ class FinanceQAApp:
                     question_with_context = question
 
                 # Esegui la query
-                if self.model_choice == "GPT (OpenAI)" and OPENAI_API_KEY:
-                    answer, references = query_rag_with_gpt(question_with_context, expertise_level=expertise_level)
-                elif self.model_choice == "Claude (Anthropic)" and ANTHROPIC_API_KEY:
-                    answer, references, _, _ = query_rag_with_cloud(question_with_context, expertise_level=expertise_level)
-                else:
-                    answer = "⚠️ La chiave API per il modello selezionato non è disponibile."
-                    references = []
+                if self.vector_store and question:
+                    if self.model_choice == "GPT (OpenAI)" and OPENAI_API_KEY:
+                        answer, references = query_rag_with_gpt(question_with_context, self.vector_store,
+                                                                expertise_level=expertise_level)
+                    elif self.model_choice == "Claude (Anthropic)" and ANTHROPIC_API_KEY:
+                        answer, references, _, _ = query_rag_with_cloud(question_with_context, self.vector_store,
+                                                                        expertise_level=expertise_level)
+                    else:
+                        answer = "⚠️ La chiave API per il modello selezionato non è disponibile."
+                        references = []
 
                 # Mostra la risposta
                 formatted_answer = format_response(answer, references)
@@ -212,7 +227,7 @@ class FinanceQAApp:
                 st.warning("🚨 Nessuna knowledge base disponibile. Carica un documento nella sezione 'Gestione Documenti'.")
 
         elif self.page == "🗂️ Gestione Documenti":
-            st.header(self.config.get('header_documents', "📁 Gestione Documenti"))
+            st.header(self.config.get('header_documents', "📚 Gestione Knowledge Base"))
             st.markdown(self.config.get('default_document_message', "Carica, visualizza e gestisci i documenti nella knowledge base."))
             self.doc_interface.show()
 
