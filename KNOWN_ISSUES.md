@@ -8,6 +8,7 @@ Questo file elenca i problemi noti e le aree di miglioramento per il progetto. G
 
 ### **Integrare funzionalita del progetto RAG GPT**
 --------------------
+https://github.com/NirDiamant/RAG_Techniques
 https://github.com/bRAGAI/bRAG-langchain/
 mettere gestione delle foto 
 ### 1. **Testing RAGAS**
