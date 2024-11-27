@@ -202,3 +202,6 @@ class DocumentInterface:
                             st.markdown(f"[Apri in una nuova scheda]({doc['Fonte']})", unsafe_allow_html=True)
                         else:
                             self.doc_manager.open_document(doc["ID Documento"])
+
+        else:
+            st.warning("Knowledge base vuoto.")

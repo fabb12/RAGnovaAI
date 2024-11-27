@@ -22,10 +22,11 @@ class DocumentManager:
 
     def init_session_state(self):
         """Inizializza variabili nel session state."""
-        if "document_names" not in st.session_state:
-            st.session_state["document_names"] = {}
+        kb_key = f"document_names_{self.vector_store._persist_directory}"
+        if kb_key not in st.session_state:
+            st.session_state[kb_key] = {}
         if "loaded_documents" not in st.session_state:
-            st.session_state["loaded_documents"] = False
+            st.session_state["loaded_documents"] = {}
         if "refresh_counter" not in st.session_state:
             st.session_state["refresh_counter"] = 0
 
@@ -186,7 +187,11 @@ class DocumentManager:
 
     def load_existing_documents(self):
         """Carica i documenti esistenti dal database e li memorizza in `session_state` per evitare duplicati."""
-        if self.vector_store and not st.session_state.get("loaded_documents", False):
+        kb_key = f"document_names_{self.vector_store._persist_directory}"
+        if self.vector_store and not st.session_state.get(f"loaded_documents_{self.vector_store._persist_directory}",
+                                                          False):
+            if kb_key not in st.session_state:
+                st.session_state[kb_key] = {}
             results = self.vector_store._collection.get(include=["metadatas"])
             for metadata in results["metadatas"]:
                 doc_id = metadata.get("doc_id")
@@ -194,13 +199,13 @@ class DocumentManager:
                 file_hash = metadata.get("file_hash")
                 file_path = metadata.get("file_path")
 
-                if doc_id and file_name and doc_id not in st.session_state.document_names:
-                    st.session_state.document_names[doc_id] = {
+                if doc_id and file_name and doc_id not in st.session_state[kb_key]:
+                    st.session_state[kb_key][doc_id] = {
                         "file_name": file_name,
                         "file_hash": file_hash,
                         "file_path": file_path
                     }
-            st.session_state.loaded_documents = True
+            st.session_state[f"loaded_documents_{self.vector_store._persist_directory}"] = True
 
     def truncate_text(self, text, max_length=50):
         """
@@ -283,8 +288,9 @@ class DocumentManager:
 
     def delete_document(self, doc_id):
         """Elimina un documento dal database e dal vector store usando il suo ID."""
+        kb_key = f"document_names_{self.vector_store._persist_directory}"
         try:
-            if doc_id in st.session_state.document_names:
+            if doc_id in st.session_state.get(kb_key, {}):
                 # Elimina tutti i vettori associati al documento tramite il filtro sul metadato 'doc_id'
                 self.vector_store._collection.delete(where={"doc_id": doc_id})
                 self.vector_store.persist()
@@ -297,7 +303,7 @@ class DocumentManager:
                 if exists['metadatas']:
                     st.warning(f"Il documento con ID '{doc_id}' non è stato eliminato correttamente.")
                 else:
-                    del st.session_state.document_names[doc_id]
+                    del st.session_state[kb_key][doc_id]
                     st.success(f"Documento con ID '{doc_id}' rimosso con successo.")
 
                     # Aggiorna il session_state per forzare l'aggiornamento della tabella
@@ -312,14 +318,18 @@ class DocumentManager:
         if not self.vector_store:
             return []
 
+        kb_key = f"document_names_{self.vector_store._persist_directory}"
+        if kb_key not in st.session_state:
+            st.session_state[kb_key] = {}
+
         results = self.vector_store._collection.get(include=["metadatas"])
         documents = []
-        seen_hashes = set()
+        seen_doc_ids = set()
 
         for metadata in results["metadatas"]:
             doc_id = metadata.get("doc_id")
-            if doc_id not in seen_hashes:
-                seen_hashes.add(doc_id)
+            if doc_id not in seen_doc_ids:
+                seen_doc_ids.add(doc_id)
                 fonte = metadata.get("source_url", metadata.get("file_path", "N/A"))
 
                 # Rendi la colonna "Fonte" cliccabile se è un URL
