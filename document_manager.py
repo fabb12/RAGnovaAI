@@ -13,7 +13,7 @@ class DocumentManager:
     ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt", ".csv"}
     WEB_DOCUMENT_ID_PREFIX = "web_"  # Prefisso per documenti caricati da URL
 
-    def __init__(self, vector_store):
+    def __init__(self, vector_store, upload_dir="uploaded_documents"):
         if vector_store is None:
             vector_store = create_embeddings([])  # Usa una funzione che crea un nuovo vector store
         self.vector_store = vector_store

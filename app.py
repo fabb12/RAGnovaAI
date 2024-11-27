@@ -70,6 +70,25 @@ class FinanceQAApp:
 
         st.sidebar.divider()
 
+        # Aggiungi la selezione della KB all'inizio
+        st.sidebar.markdown("### 📚 Seleziona Knowledge Base")
+        kb_list = st.session_state.get("knowledge_bases", [])
+        if kb_list:
+            selected_kb = st.sidebar.selectbox("Knowledge Base", kb_list,
+                                               index=kb_list.index(st.session_state["selected_kb"]) if st.session_state[
+                                                                                                           "selected_kb"] in kb_list else 0)
+            if st.session_state.get("selected_kb") != selected_kb:
+                st.session_state["selected_kb"] = selected_kb
+                # Reinizializza il vector store con la nuova KB
+                self.vector_store = load_or_create_chroma_db(st.session_state["selected_kb"])
+                # Aggiorna il vector_store nella doc_interface
+                self.doc_interface.update_vector_store(self.vector_store)
+        else:
+            st.sidebar.info("Non ci sono Knowledge Base disponibili. Creane una nella sezione 'Gestione Documenti'.")
+
+        st.sidebar.divider()
+
+
         # Selezione del modello di intelligenza artificiale
         st.sidebar.markdown("### Modello Intelligenza Artificiale")
         model_options = ["GPT (OpenAI)", "Claude (Anthropic)"]
@@ -157,6 +176,7 @@ class FinanceQAApp:
 
     def run(self):
         """Esegue l'applicazione principale."""
+
         if self.page == "❓ Domande":
             st.header(self.config.get('header_questions', "💬 Fai una Domanda"))
 

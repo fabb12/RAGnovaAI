@@ -8,12 +8,27 @@ from database import load_or_create_chroma_db
 
 class DocumentInterface:
     def __init__(self, vector_store, upload_dir="uploaded_documents"):
-        self.doc_manager = DocumentManager(vector_store)
-        self.upload_dir = upload_dir
-
+        self.vector_store = vector_store
+        self.upload_dir_base = upload_dir  # Directory base per gli upload
+        self.upload_dir = self.get_upload_dir()  # Directory specifica per la KB
+        self.doc_manager = DocumentManager(self.vector_store, self.upload_dir)
         # Crea la directory di upload se non esiste
         if not os.path.exists(self.upload_dir):
             os.makedirs(self.upload_dir)
+
+    def update_vector_store(self, vector_store):
+        """Aggiorna il vector store e le directory associate."""
+        self.vector_store = vector_store
+        self.upload_dir = self.get_upload_dir()
+        self.doc_manager.vector_store = self.vector_store
+        self.doc_manager.upload_dir = self.upload_dir
+        # Crea la directory di upload se non esiste
+        if not os.path.exists(self.upload_dir):
+            os.makedirs(self.upload_dir)
+    def get_upload_dir(self):
+        """Ottiene il percorso della directory di upload per la KB selezionata."""
+        kb_name = st.session_state.get("selected_kb", "default")
+        return os.path.join(self.upload_dir_base, f"kb_{kb_name}")
 
     def save_uploaded_files(self, uploaded_files):
         """
@@ -54,29 +69,27 @@ class DocumentInterface:
         apply_custom_css()
 
         # ---- Sezione per la Gestione delle Knowledge Base ----
-        # Carica le knowledge base esistenti
-        kb_list = st.session_state.get("knowledge_bases", [])
-        selected_kb = st.session_state.get("selected_kb", None)
-
-        # Selezione della knowledge base
-        if kb_list:
-            selected_kb = st.selectbox("Seleziona Knowledge Base", kb_list,
-                                       index=kb_list.index(selected_kb) if selected_kb in kb_list else 0)
-            st.session_state["selected_kb"] = selected_kb
-        else:
-            st.info("Non ci sono Knowledge Base disponibili. Creane una nuova.")
-
         # Creazione di una nuova knowledge base
-        new_kb_name = st.text_input("Crea una nuova Knowledge Base", value="")
-        if st.button("Crea"):
+        st.markdown("---")
+        st.markdown("### 🆕 Crea una nuova Knowledge Base")
+        new_kb_name = st.text_input("Nome della nuova Knowledge Base", value="")
+        if st.button("Crea Knowledge Base"):
             if new_kb_name:
+                kb_list = st.session_state.get("knowledge_bases", [])
                 if new_kb_name not in kb_list:
                     kb_list.append(new_kb_name)
                     st.session_state["knowledge_bases"] = kb_list
                     st.session_state["selected_kb"] = new_kb_name
                     st.success(f"Knowledge Base '{new_kb_name}' creata e selezionata.")
-                    # Re-inizializza il vector store con la nuova KB
-                    self.initialize_vector_store()
+                    # Reinizializza il vector store con la nuova KB
+                    self.vector_store = load_or_create_chroma_db(new_kb_name)
+                    self.doc_manager.vector_store = self.vector_store
+                    # Aggiorna la directory di upload
+                    self.upload_dir = self.get_upload_dir()
+                    self.doc_manager.upload_dir = self.upload_dir
+                    # Crea la directory di upload se non esiste
+                    if not os.path.exists(self.upload_dir):
+                        os.makedirs(self.upload_dir)
                 else:
                     st.warning("Una Knowledge Base con questo nome esiste già.")
             else:
