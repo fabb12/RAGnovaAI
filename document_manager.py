@@ -8,7 +8,9 @@ from datetime import datetime
 from utils.processing.embeddings import create_embeddings
 from utils.loaders.document_loader import load_document, split_text  # Per gestione documenti e chunk
 import validators
+from urllib.parse import urljoin
 import requests
+from langchain.schema import Document  # Se non già importato
 from bs4 import BeautifulSoup
 class DocumentManager:
     ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt", ".csv"}
@@ -109,31 +111,64 @@ class DocumentManager:
         except Exception as e:
             st.error(f"Errore durante l'elaborazione del documento '{file_name}': {e}")
 
-    def fetch_web_content(self, url):
-        """Scarica e analizza il contenuto di una pagina web."""
+    def fetch_web_content(self, url, depth_level=1, visited=None, max_pages=50):
+        """Scarica e analizza il contenuto di una pagina web fino al livello di profondità specificato."""
+        if visited is None:
+            visited = set()
+        if depth_level < 1 or len(visited) >= max_pages:
+            return []
 
+        # Controlla se l'URL è già stato visitato per prevenire loop
+        if url in visited:
+            return []
+        visited.add(url)
 
         try:
             response = requests.get(url, headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"
+                "User-Agent": "Mozilla/5.0"
             })
 
             if "text/html" not in response.headers.get("Content-Type", ""):
-                st.error("Errore: Il contenuto dell'URL non è un documento HTML leggibile.")
-                return None
-
+                return []
 
             response.raise_for_status()
             soup = BeautifulSoup(response.text, 'html.parser')
 
             # Estrarre solo il testo visibile
             text = soup.get_text(separator="\n", strip=True)
-            return text
-        except Exception as e:
-            st.error(f"Errore durante il caricamento del contenuto: {e}")
-            return None
+            documents = [{"url": url, "content": text}]
 
-    def add_web_document(self, url, chunk_size=1024, chunk_overlap=128):
+            if depth_level > 1:
+                # Trova tutti i link nella pagina
+                links = [a.get('href') for a in soup.find_all('a', href=True)]
+                # Processa i link per ottenere URL assoluti
+                links = [urljoin(url, link) if not link.startswith('http') else link for link in links]
+                # Filtra link non validi
+                links = [
+                    link for link in links
+                    if not link.startswith('mailto:')
+                       and not link.startswith('javascript:')
+                       and link not in visited
+                ]
+
+                # Scarica il contenuto dei link ricorsivamente
+                for link in links:
+                    if len(visited) >= max_pages:
+                        break
+                    documents.extend(
+                        self.fetch_web_content(
+                            link,
+                            depth_level=depth_level - 1,
+                            visited=visited,
+                            max_pages=max_pages
+                        )
+                    )
+
+            return documents
+        except Exception as e:
+            return []
+
+    def add_web_document(self, url, chunk_size=1024, chunk_overlap=128, depth_level=1):
         """
         Scarica il contenuto di un sito web, lo divide in chunk e lo aggiunge alla knowledge base.
         """
@@ -142,49 +177,43 @@ class DocumentManager:
             return
 
         # Scaricare il contenuto web usando fetch_web_content
-        web_content = self.fetch_web_content(url)
-        if not web_content:
+        web_documents = self.fetch_web_content(url, depth_level=depth_level)
+
+        if not web_documents:
             st.error(f"Errore: Nessun contenuto trovato per l'URL: {url}")
             return
 
-        # Creare un documento simulato
-        documents = [{"page_content": web_content.strip(), "metadata": {"source_url": url}}]
-
-        # Convertire in oggetti compatibili con split_text
-        class Document:
-            def __init__(self, page_content, metadata):
-                self.page_content = page_content
-                self.metadata = metadata
-
-        formatted_documents = [Document(doc["page_content"], doc["metadata"]) for doc in documents]
-
-        # Suddividere in chunk
         doc_id = str(uuid.uuid4())
         upload_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        chunks = split_text(formatted_documents, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
-        if not chunks:
-            st.warning(f"Avviso: Il contenuto di '{url}' è troppo breve per essere suddiviso in chunk.")
-            return
+        for web_doc in web_documents:
+            page_content = web_doc['content']
+            page_url = web_doc['url']
+            # Creiamo un oggetto Document per ogni pagina
+            document = Document(page_content=page_content, metadata={"source_url": page_url})
+            # Suddividiamo il documento in chunk
+            chunks = split_text([document], chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+            if not chunks:
+                continue  # Salta se non ci sono chunk
 
-        # Aggiungere i chunk al vector store
-        for chunk in chunks:
-            chunk.metadata.update({
-                "doc_id": doc_id,
-                "file_name": "Contenuto Web",
-                "file_size": len(chunk.page_content) / 1024,  # Dimensione in KB
-                "creation_date": "N/A",
-                "upload_date": upload_date,
-                "source_url": url,
-            })
+            for chunk in chunks:
+                chunk.metadata.update({
+                    "doc_id": doc_id,
+                    "file_name": "Contenuto Web",
+                    "file_size": len(chunk.page_content) / 1024,  # Dimensione in KB
+                    "creation_date": "N/A",
+                    "upload_date": upload_date,
+                    "source_url": page_url,
+                })
 
-        try:
-            self.vector_store.add_documents(chunks)
-            self.vector_store.persist()
-            st.success(f"Contenuto da '{url}' aggiunto con successo!")
-            st.session_state["refresh_counter"] += 1
-        except Exception as e:
-            st.error(f"Errore durante l'aggiunta del documento web: {e}")
+            try:
+                self.vector_store.add_documents(chunks)
+            except Exception as e:
+                st.error(f"Errore durante l'aggiunta del documento web: {e}")
+
+        self.vector_store.persist()
+        st.success(f"Contenuto da '{url}' aggiunto con successo!")
+        st.session_state["refresh_counter"] += 1
 
     def load_existing_documents(self):
         """Carica i documenti esistenti dal database e li memorizza in `session_state` per evitare duplicati."""

@@ -46,12 +46,17 @@ class DocumentInterface:
 
         return saved_files
 
-    def add_web_document(self, url, chunk_size=1024, chunk_overlap=128):
+    def add_web_document(self, url, chunk_size=1024, chunk_overlap=128, depth_level=1):
         """
         Wrapper per chiamare la funzione `add_web_document` in `DocumentManager`.
         """
         try:
-            message = self.doc_manager.add_web_document(url, chunk_size, chunk_overlap)
+            message = self.doc_manager.add_web_document(
+                url,
+                chunk_size,
+                chunk_overlap,
+                depth_level=depth_level  # Passiamo il livello di profondità
+            )
             st.success(message)
         except ValueError as ve:
             st.error(f"Errore: {ve}")
@@ -148,13 +153,28 @@ class DocumentInterface:
                         file_path, chunk_size=chunk_size, chunk_overlap=chunk_overlap
                     )
                 st.success(f"Caricati {len(saved_files)} documenti con successo!")
-
             # ---- Input per URL ----
             st.markdown("### 🌐 Carica Sito Web")
             url_input = st.text_input("Inserisci l'URL del sito web", placeholder="https://esempio.com")
+
+            # Aggiungiamo un campo per il livello di profondità
+            depth_level = st.number_input(
+                "Livello di profondità",
+                min_value=1,
+                max_value=5,
+                value=1,
+                step=1,
+                help="Indica fino a quale livello di link scendere"
+            )
+
             if st.button("Carica Sito Web"):
                 if url_input:
-                    self.add_web_document(url_input, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+                    self.add_web_document(
+                        url_input,
+                        chunk_size=chunk_size,
+                        chunk_overlap=chunk_overlap,
+                        depth_level=depth_level  # Passiamo il livello di profondità
+                    )
                 else:
                     st.warning("Inserisci un URL valido prima di caricare.")
 
