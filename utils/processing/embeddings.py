@@ -1,3 +1,5 @@
+# processing/embeddings.py
+
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 import os

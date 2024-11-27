@@ -1,4 +1,4 @@
-# utils/retriever.py
+# processing/retriever.py
 
 from langchain.chat_models import ChatOpenAI, ChatAnthropic
 from langchain.prompts import ChatPromptTemplate

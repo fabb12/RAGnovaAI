@@ -1,8 +1,9 @@
+#document_interface.py
+
 import os
 import streamlit as st
 from document_manager import DocumentManager
 from ui_components import apply_custom_css
-import validators
 from database import load_or_create_chroma_db
 
 

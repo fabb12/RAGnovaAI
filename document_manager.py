@@ -1,3 +1,5 @@
+#document_manager.py
+
 import streamlit as st
 import os
 import uuid
@@ -6,7 +8,6 @@ from datetime import datetime
 from utils.processing.embeddings import create_embeddings
 from utils.loaders.document_loader import load_document, split_text  # Per gestione documenti e chunk
 import validators
-from langchain.document_loaders import UnstructuredURLLoader
 import requests
 from bs4 import BeautifulSoup
 class DocumentManager:
