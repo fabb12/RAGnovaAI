@@ -47,13 +47,6 @@ class FinanceQAApp:
             st.session_state["selected_kb"] = st.session_state["knowledge_bases"][0] if st.session_state["knowledge_bases"] else None
 
 
-
-        # Inizializza il vector store per la KB selezionata
-        self.vector_store = load_or_create_chroma_db(st.session_state["selected_kb"])
-        self.doc_interface = DocumentInterface(self.vector_store)
-        self.doc_interface.vector_store = self.vector_store
-        self.doc_interface.doc_manager.vector_store = self.vector_store
-
         # Configura lo stato del toggle per previous_answer
         if "use_previous_answer" not in st.session_state:
             st.session_state["use_previous_answer"] = False  # Disabilitato di default
@@ -72,24 +65,24 @@ class FinanceQAApp:
 
         st.sidebar.divider()
 
-        # Aggiungi la selezione della KB all'inizio
+
+        # Gestione della selezione della Knowledge Base
         st.sidebar.markdown("### 📚 Seleziona Knowledge Base")
         kb_list = st.session_state.get("knowledge_bases", [])
         if kb_list:
-            selected_kb = st.sidebar.selectbox("Knowledge Base", kb_list,
-                                               index=kb_list.index(st.session_state["selected_kb"]) if st.session_state[
-                                                                                                           "selected_kb"] in kb_list else 0)
+            selected_kb = st.sidebar.selectbox(
+                "Knowledge Base",
+                kb_list,
+                index=kb_list.index(st.session_state["selected_kb"]) if st.session_state.get(
+                    "selected_kb") in kb_list else 0
+            )
             if st.session_state.get("selected_kb") != selected_kb:
                 st.session_state["selected_kb"] = selected_kb
-                # Reinizializza il vector store con la nuova KB
-                self.vector_store = load_or_create_chroma_db(st.session_state["selected_kb"])
-                # Aggiorna il vector_store nella doc_interface
-                self.doc_interface.update_vector_store(self.vector_store)
         else:
             st.sidebar.info("Non ci sono Knowledge Base disponibili. Creane una nella sezione 'Gestione Documenti'.")
 
-        st.sidebar.divider()
 
+        st.sidebar.divider()
 
         # Selezione del modello di intelligenza artificiale
         st.sidebar.markdown("### Modello Intelligenza Artificiale")
@@ -179,6 +172,13 @@ class FinanceQAApp:
     def run(self):
         """Esegue l'applicazione principale."""
 
+        # Inizializza o aggiorna il vector store e il document interface in base alla KB selezionata
+        self.vector_store = load_or_create_chroma_db(st.session_state["selected_kb"])
+        if not hasattr(self, 'doc_interface') or self.doc_interface is None:
+            self.doc_interface = DocumentInterface(self.vector_store)
+        else:
+            self.doc_interface.update_vector_store(self.vector_store)
+
         if self.page == "❓ Domande":
             st.header(self.config.get('header_questions', "💬 Fai una Domanda"))
 
@@ -204,16 +204,10 @@ class FinanceQAApp:
                     help="Scegli il livello per adattare il dettaglio della risposta."
                 )
 
-
             if validators.url(question):  # Controlla se l'input è un URL
                 st.info("Riconosciuto come URL. Caricamento contenuti dal sito web...")
-                web_content = self.load_web_content(question)
-
-                if web_content:
-                    st.success("Contenuto web caricato correttamente.")
-                    self.doc_interface.add_web_document(web_content)
-                else:
-                    st.error("Impossibile caricare il contenuto dal sito web.")
+                self.doc_interface.add_web_document(question)
+                st.success("Contenuto web caricato correttamente.")
             elif self.vector_store and question:
                 # Usa il contesto della risposta precedente se abilitato
                 if st.session_state["use_previous_answer"] and st.session_state["previous_answer"]:
@@ -223,36 +217,35 @@ class FinanceQAApp:
                 else:
                     question_with_context = question
 
-                # Esegui la query
-                if self.vector_store and question:
-                    # Usa il contesto della risposta precedente se abilitato
-                    if st.session_state["use_previous_answer"] and st.session_state["previous_answer"]:
-                        question_with_context = (
-                            f"{st.session_state['previous_answer']} \n\nDomanda attuale: {question}"
-                        )
-                    else:
-                        question_with_context = question
-
-                    # Esegui la query utilizzando il vector_store della KB selezionata
-                    if self.model_choice == "GPT (OpenAI)" and OPENAI_API_KEY:
-                        answer, references = query_rag_with_gpt(question_with_context, self.vector_store,
-                                                                expertise_level=expertise_level)
-                    elif self.model_choice == "Claude (Anthropic)" and ANTHROPIC_API_KEY:
-                        answer, references, _, _ = query_rag_with_cloud(question_with_context, self.vector_store,
-                                                                        expertise_level=expertise_level)
-                    else:
-                        answer = "⚠️ La chiave API per il modello selezionato non è disponibile."
-                        references = []
-
-                    # ... Resto del codice per mostrare la risposta ...
+                # Esegui la query utilizzando il vector_store della KB selezionata
+                if self.model_choice == "GPT (OpenAI)" and OPENAI_API_KEY:
+                    answer, references = query_rag_with_gpt(
+                        question_with_context,
+                        self.vector_store,
+                        expertise_level=expertise_level
+                    )
+                elif self.model_choice == "Claude (Anthropic)" and ANTHROPIC_API_KEY:
+                    answer, references, _, _ = query_rag_with_cloud(
+                        question_with_context,
+                        self.vector_store,
+                        expertise_level=expertise_level
+                    )
+                else:
+                    answer = "⚠️ La chiave API per il modello selezionato non è disponibile."
+                    references = []
 
                 # Mostra la risposta
-                formatted_answer = format_response(answer, references)
-                st.markdown(formatted_answer)
+                format_response(answer, references)
 
                 # Aggiungi alla cronologia
                 self.add_to_history(question, answer, references)
-                self.log_interaction(question, question_with_context, question_with_context, answer, st.session_state["history"])
+                self.log_interaction(
+                    question,
+                    question_with_context,
+                    question_with_context,
+                    answer,
+                    st.session_state["history"]
+                )
 
                 # Aggiorna la risposta precedente se abilitato
                 if st.session_state["use_previous_answer"]:
@@ -262,11 +255,15 @@ class FinanceQAApp:
                 st.session_state["current_question"] = ""
                 st.divider()
             elif not self.vector_store:
-                st.warning("🚨 Nessuna knowledge base disponibile. Carica un documento nella sezione 'Gestione Documenti'.")
+                st.warning(
+                    "🚨 Nessuna knowledge base disponibile. Carica un documento nella sezione 'Gestione Documenti'.")
 
         elif self.page == "🗂️ Gestione Documenti":
             st.header(self.config.get('header_documents', "📚 Gestione Knowledge Base"))
-            st.markdown(self.config.get('default_document_message', "Carica, visualizza e gestisci i documenti nella knowledge base."))
+            st.markdown(self.config.get(
+                'default_document_message',
+                "Carica, visualizza e gestisci i documenti nella knowledge base."
+            ))
             self.doc_interface.show()
 
     @staticmethod
