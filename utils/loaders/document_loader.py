@@ -6,10 +6,15 @@ import os
 import pypandoc
 from tempfile import TemporaryDirectory
 
+from langchain_experimental.text_splitter import SemanticChunker, BreakpointThresholdType
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.schema import Document
+
+
 
 def convert_doc_to_docx(file_path):
-    """Converte un file .doc in .docx usando pypandoc, se disponibile."""
-    if not file_path.endswith(".doc"):
+    """Converte un file .docs in .docx usando pypandoc, se disponibile."""
+    if not file_path.endswith(".docs"):
         return file_path  # Restituisce il percorso originale se è già un .docx
 
     # Verifica che il file esista
@@ -70,7 +75,27 @@ def load_document(file_path_or_url):
             raise RuntimeError(f"Errore nel caricamento del file {file_path_or_url}: {e}")
 
 
-def split_text(documents, chunk_size=300, chunk_overlap=100):
+# document_loader.py
+
+def split_text_semantic(documents, breakpoint_type="percentile", breakpoint_amount=90):
+    """Divide i documenti in chunk semantici."""
+    embeddings = OpenAIEmbeddings()
+    semantic_chunker = SemanticChunker(
+        embeddings=embeddings,
+        breakpoint_threshold_type=breakpoint_type,
+        breakpoint_threshold_amount=breakpoint_amount
+    )
+    chunks = []
+    for doc in documents:
+        doc_chunks = semantic_chunker.create_documents(texts=[doc.page_content])
+        for chunk in doc_chunks:
+            # Aggiorna i metadati per ogni chunk
+            chunk.metadata.update(doc.metadata)
+            chunks.append(chunk)
+    return chunks
+
+
+def split_text_plain(documents, chunk_size=300, chunk_overlap=100):
     """Divide i documenti in chunk più piccoli."""
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,

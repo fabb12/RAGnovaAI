@@ -6,14 +6,14 @@ import uuid
 import hashlib
 from datetime import datetime
 from utils.processing.embeddings import create_embeddings
-from utils.loaders.document_loader import load_document, split_text  # Per gestione documenti e chunk
+from utils.loaders.document_loader import load_document, split_text_semantic  # Per gestione documenti e chunk
 import validators
 from urllib.parse import urljoin
 import requests
 from langchain.schema import Document  # Se non già importato
 from bs4 import BeautifulSoup
 class DocumentManager:
-    ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt", ".csv"}
+    ALLOWED_EXTENSIONS = {".pdf", ".docx", ".docs", ".txt", ".csv"}
     WEB_DOCUMENT_ID_PREFIX = "web_"  # Prefisso per documenti caricati da URL
 
     def __init__(self, vector_store, upload_dir="uploaded_documents"):
@@ -87,7 +87,12 @@ class DocumentManager:
                 st.error(f"Errore: Impossibile caricare il documento '{file_name}'.")
                 return
 
-            chunks = split_text(data, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+            # Utilizza il semantic chunking
+            chunks = split_text_semantic(
+                data,
+                breakpoint_type="percentile",
+                breakpoint_amount=90
+            )
             if not chunks:
                 st.error(f"Errore: Il documento '{file_name}' non può essere suddiviso in chunk.")
                 return
@@ -192,7 +197,7 @@ class DocumentManager:
             # Creiamo un oggetto Document per ogni pagina
             document = Document(page_content=page_content, metadata={"source_url": page_url})
             # Suddividiamo il documento in chunk
-            chunks = split_text([document], chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+            chunks = split_text_semantic([document])
             if not chunks:
                 continue  # Salta se non ci sono chunk
 

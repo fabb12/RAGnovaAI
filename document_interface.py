@@ -112,7 +112,7 @@ class DocumentInterface:
         # ---- Opzioni per la dimensione dei chunk ----
         with st.container():
             st.markdown("---")
-            st.markdown("### 🧩 Imposta Chunk")
+            """st.markdown("### 🧩 Imposta Chunk")
 
             col1, col2 = st.columns([1, 1])
             with col1:
@@ -133,9 +133,9 @@ class DocumentInterface:
                     step=10,
                     help="Sovrapposizione dei chunk"
                 )
-
+"""
             # ---- Drag-and-Drop per File ----
-            st.markdown("---")
+            #st.markdown("---")
             st.markdown("### 📂 Carica File o Cartelle")
 
             uploaded_files = st.file_uploader(
@@ -150,10 +150,10 @@ class DocumentInterface:
 
                 for file_path in saved_files:
                     self.doc_manager.add_document(
-                        file_path, chunk_size=chunk_size, chunk_overlap=chunk_overlap
-                    )
+                        file_path)
                 st.success(f"Caricati {len(saved_files)} documenti con successo!")
             # ---- Input per URL ----
+            st.markdown("---")
             st.markdown("### 🌐 Carica Sito Web")
             url_input = st.text_input("Inserisci l'URL del sito web", placeholder="https://esempio.com")
 
@@ -171,9 +171,7 @@ class DocumentInterface:
                 if url_input:
                     self.add_web_document(
                         url_input,
-                        chunk_size=chunk_size,
-                        chunk_overlap=chunk_overlap,
-                        depth_level=depth_level  # Passiamo il livello di profondità
+                       depth_level=depth_level  # Passiamo il livello di profondità
                     )
                 else:
                     st.warning("Inserisci un URL valido prima di caricare.")
