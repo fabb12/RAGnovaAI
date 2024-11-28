@@ -16,7 +16,7 @@ Questo file elenca i problemi noti e le aree di miglioramento per il progetto. G
 
 ---
 
-### 1. **Implementare il Chunking Semantico (Semantic Chunking) 🧠**
+### 1. **Implementare il Chunking Semantico (Semantic Chunking) 🧠** (FATTO)
    - **Descrizione**: Dividere i documenti basandosi sulla coerenza semantica anziché su dimensioni fisse, per preservare il contesto e migliorare la qualità del recupero delle informazioni.
    - **Suggerimento**: Utilizzare librerie NLP come spaCy o NLTK per identificare le sezioni coerenti all'interno dei documenti e modificare le funzioni di caricamento dei documenti per includere il chunking semantico.
 

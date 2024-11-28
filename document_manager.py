@@ -383,8 +383,10 @@ class DocumentManager:
 
     def open_document(self, doc_id):
         """Apre il documento usando il percorso assoluto memorizzato in `session_state`."""
-        if doc_id in st.session_state.document_names:
-            file_path = st.session_state.document_names[doc_id]["file_path"]
+        kb_key = f"document_names_{self.vector_store._persist_directory}"
+        document_names = st.session_state.get(kb_key, {})
+        if doc_id in document_names:
+            file_path = document_names[doc_id]["file_path"]
             if os.path.exists(file_path):
                 os.startfile(file_path)
             else:
