@@ -15,3 +15,4 @@ validators==0.34.0
 openai
 chromadb
 tiktoken
+pypdf
