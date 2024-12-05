@@ -14,3 +14,4 @@ streamlit==1.39.0
 validators==0.34.0
 openai
 chromadb
+tiktoken
