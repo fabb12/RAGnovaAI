@@ -12,3 +12,4 @@ python_doctr==0.10.0
 Requests==2.32.3
 streamlit==1.39.0
 validators==0.34.0
+openai
