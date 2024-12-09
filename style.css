@@ -1,19 +1,20 @@
 /* Variabili generiche per i temi */
 :root {
-    --background-color: #ffffff; /* Sfondi neutri (bianco) */
-    --text-color: #000000; /* Testo scuro */
-    --secondary-text-color: #666666; /* Testo secondario */
-    --link-color: #007acc; /* Colore dei link */
-    --button-bg-color: #0056b3; /* Pulsante primario */
+    --background-color: #f0f4f8; /* Sfondo chiaro */
+    --text-color: #333333; /* Testo scuro */
+    --secondary-text-color: #555555; /* Testo secondario */
+    --link-color: #1d9bf0; /* Colore dei link */
+    --button-bg-color: linear-gradient(90deg, #0062ff, #33a1fd); /* Gradiente pulsante */
     --button-text-color: #ffffff; /* Testo pulsante */
-    --button-hover-bg-color: #003a75; /* Pulsante hover */
-    --input-bg-color: #f9f9f9; /* Input di testo */
-    --input-text-color: #000000; /* Testo input */
+    --button-hover-bg-color: linear-gradient(90deg, #0050d1, #2489e0); /* Pulsante hover */
+    --input-bg-color: #ffffff; /* Input di testo */
+    --input-text-color: #333333; /* Testo input */
     --input-border-color: #cccccc; /* Bordo input */
-    --divider-color: #dddddd; /* Divider */
-    --table-header-bg-color: #f1f1f1; /* Header tabelle */
-    --table-row-even-bg-color: #f9f9f9; /* Riga tabella pari */
+    --divider-color: #e1e4e8; /* Divider */
+    --table-header-bg-color: #eff3f8; /* Header tabelle */
+    --table-row-even-bg-color: #f9fafc; /* Riga tabella pari */
     --table-row-odd-bg-color: #ffffff; /* Riga tabella dispari */
+    --box-shadow-color: rgba(0, 0, 0, 0.1); /* Ombra elementi */
     --success-bg-color: #d4edda; /* Successo */
     --error-bg-color: #f8d7da; /* Errore */
     --warning-bg-color: #fff3cd; /* Avviso */
@@ -23,24 +24,21 @@
 /* Tema scuro */
 @media (prefers-color-scheme: dark) {
     :root {
-        --background-color: #121212; /* Sfondo scuro */
-        --text-color: #d3d3d3; /* Testo chiaro */
+        --background-color: #181a1b; /* Sfondo scuro */
+        --text-color: #e0e0e0; /* Testo chiaro */
         --secondary-text-color: #aaaaaa; /* Testo secondario */
-        --link-color: #80b3ff; /* Link */
-        --button-bg-color: #4a4a4a; /* Pulsante scuro */
+        --link-color: #80caff; /* Link */
+        --button-bg-color: linear-gradient(90deg, #4a90e2, #007aff); /* Gradiente pulsante */
         --button-text-color: #ffffff; /* Testo pulsante */
-        --button-hover-bg-color: #5a5a5a; /* Hover pulsante */
+        --button-hover-bg-color: linear-gradient(90deg, #367bcf, #0069e0); /* Pulsante hover */
         --input-bg-color: #2e2e2e; /* Input scuro */
         --input-text-color: #ffffff; /* Testo input scuro */
-        --input-border-color: #3d3d3d; /* Bordo input scuro */
+        --input-border-color: #4a4a4a; /* Bordo input scuro */
         --divider-color: #3d3d3d; /* Divider */
-        --table-header-bg-color: #333333; /* Header tabella scuro */
-        --table-row-even-bg-color: #282828; /* Riga pari scura */
-        --table-row-odd-bg-color: #1f1f1f; /* Riga dispari scura */
-        --success-bg-color: #388e3c; /* Successo */
-        --error-bg-color: #b33a3a; /* Errore */
-        --warning-bg-color: #e6b800; /* Avviso */
-        --info-bg-color: #006064; /* Informazione */
+        --table-header-bg-color: #242424; /* Header tabella */
+        --table-row-even-bg-color: #1e1e1e; /* Riga pari scura */
+        --table-row-odd-bg-color: #181818; /* Riga dispari scura */
+        --box-shadow-color: rgba(255, 255, 255, 0.1); /* Ombra elementi */
     }
 }
 
@@ -48,39 +46,51 @@
 body {
     background-color: var(--background-color);
     color: var(--text-color);
-    font-family: 'Arial', sans-serif;
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
 }
 
 /* Contenuto principale */
 .stApp {
     background-color: var(--background-color);
     color: var(--text-color);
+    padding: 20px;
 }
 
 /* Link */
 a, a:visited {
     color: var(--link-color);
     text-decoration: none;
+    transition: color 0.3s ease;
 }
 
 a:hover {
+    color: var(--button-hover-bg-color);
     text-decoration: underline;
 }
 
 /* Pulsanti */
 .stButton button {
-    background-color: var(--button-bg-color);
+    background: var(--button-bg-color);
     color: var(--button-text-color);
     border: none;
-    border-radius: 6px;
-    padding: 8px 16px;
+    border-radius: 8px;
+    padding: 10px 20px;
     font-weight: bold;
+    font-size: 14px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    box-shadow: 0 4px 6px var(--box-shadow-color);
+    transition: background 0.3s ease, transform 0.2s ease;
 }
 
 .stButton button:hover {
-    background-color: var(--button-hover-bg-color);
+    background: var(--button-hover-bg-color);
+    transform: translateY(-2px);
+}
+
+.stButton button:active {
+    transform: translateY(0);
 }
 
 /* Input di testo */
@@ -89,12 +99,15 @@ a:hover {
     color: var(--input-text-color);
     border: 1px solid var(--input-border-color);
     border-radius: 6px;
-    padding: 8px;
+    padding: 8px 12px;
+    font-size: 14px;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .stTextInput > div > div > input:focus {
     border-color: var(--link-color);
     box-shadow: 0 0 4px var(--link-color);
+    outline: none;
 }
 
 /* Divider */
@@ -102,7 +115,8 @@ hr {
     background-color: var(--divider-color);
     border: none;
     height: 1px;
-    opacity: 0.5;
+    opacity: 0.7;
+    margin: 20px 0;
 }
 
 /* Tabelle */
@@ -110,7 +124,8 @@ hr {
     background-color: var(--background-color);
     color: var(--text-color);
     border: 1px solid var(--divider-color);
-    border-radius: 6px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px var(--box-shadow-color);
 }
 
 .stDataFrame tr:nth-child(even) {
@@ -125,19 +140,25 @@ hr {
     background-color: var(--table-header-bg-color);
     color: var(--text-color);
     text-align: left;
-    padding: 8px;
+    padding: 10px;
+    font-weight: bold;
+    border-bottom: 1px solid var(--divider-color);
 }
 
 .stDataFrame td {
     color: var(--text-color);
-    padding: 8px;
+    padding: 10px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--divider-color);
 }
 
 /* Messaggi di stato */
 .stAlert {
-    border-radius: 6px;
-    padding: 10px;
+    border-radius: 8px;
+    padding: 15px;
     color: var(--text-color);
+    box-shadow: 0 2px 4px var(--box-shadow-color);
+    font-size: 14px;
 }
 
 .stAlert[data-baseweb="error"] {
@@ -155,19 +176,35 @@ hr {
 .stAlert[data-baseweb="success"] {
     background-color: var(--success-bg-color);
 }
+
+/* Contenitore input */
 .input-container {
-    display: flex; /* Disposizione flessibile in orizzontale */
-    align-items: center; /* Allineamento verticale al centro */
-    gap: 10px; /* Spazio tra input e pulsante */
-    margin-bottom: 10px; /* Spazio sotto il contenitore */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
 }
 
 .input-container .stTextInput {
-    flex: 1; /* Campo di input si espande per occupare tutto lo spazio disponibile */
+    flex: 1;
 }
 
 .input-container .stButton {
-    flex-shrink: 0; /* Pulsante mantiene dimensioni costanti */
-    padding: 0; /* Rimuove padding interno */
-    margin: 0; /* Elimina margini aggiuntivi */
+    flex-shrink: 0;
+}
+
+/* Animazioni */
+.stButton button, .stAlert {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

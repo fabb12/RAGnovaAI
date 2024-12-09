@@ -229,11 +229,26 @@ class DocumentInterface:
 
                     # Pulsante "Apri Risorsa"
                     if col7.button("Apri Risorsa", key=f"open_{doc['ID Documento']}"):
-                        if doc["Tipo"] == "Web":
-                            st.info(f"Apertura URL: {doc['Fonte']}")
-                            st.markdown(f"[Apri in una nuova scheda]({doc['Fonte']})", unsafe_allow_html=True)
-                        else:
-                            self.doc_manager.open_document(doc["ID Documento"])
+                        try:
+                            if doc["Tipo"] == "Web":
+                                st.info(f"Apertura URL: {doc['Fonte']}")
+                                st.markdown(f"[Apri in una nuova scheda]({doc['Fonte']})", unsafe_allow_html=True)
+                            else:
+                                self.doc_manager.open_document(doc["ID Documento"])
+                        except Exception as e:
+                            st.error(f"Impossibile aprire la risorsa: {e}")
+                            try:
+                                file_path = self.doc_manager.get_document_path(doc["ID Documento"])
+                                with open(file_path, "rb") as file:
+                                    st.download_button(
+                                        label="Scarica il file",
+                                        data=file,
+                                        file_name=os.path.basename(file_path),
+                                        mime="application/octet-stream"
+                                    )
+                            except Exception as download_error:
+                                st.error(f"Errore durante il download del file: {download_error}")
+
 
         else:
             st.warning("Knowledge base vuoto.")
