@@ -32,7 +32,7 @@ def query_rag_with_gpt(query_text, vector_store, expertise_level="expert"):
         conversation_history=""
     )
 
-    model = ChatOpenAI(max_tokens=3000)
+    model = ChatOpenAI(max_tokens=5000)
     response_text = model.predict(prompt)
 
     references = [
@@ -71,7 +71,7 @@ def query_rag_with_cloud(query_text, vector_store, expertise_level="expert"):
     client = Anthropic(api_key=ANTHROPIC_API_KEY)
     message = client.messages.create(
         model="claude-3-5-sonnet-20240620",
-        max_tokens=4096,
+        max_tokens=8192,
         temperature=0.7,
         system=PROMPT_TEMPLATE,
         messages=[

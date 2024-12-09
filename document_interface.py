@@ -26,10 +26,13 @@ class DocumentInterface:
         # Crea la directory di upload se non esiste
         if not os.path.exists(self.upload_dir):
             os.makedirs(self.upload_dir)
+
     def get_upload_dir(self):
         """Ottiene il percorso della directory di upload per la KB selezionata."""
+        username = st.session_state.get("username", "defaultuser")
         kb_name = st.session_state.get("selected_kb", "default")
-        return os.path.join(self.upload_dir_base, f"kb_{kb_name}")
+        full_kb_name = f"{username}_{kb_name}"
+        return os.path.join(self.upload_dir_base, f"kb_{full_kb_name}")
 
     def save_uploaded_files(self, uploaded_files):
         """
@@ -67,8 +70,10 @@ class DocumentInterface:
         return text if len(text) <= max_length else text[:max_length] + "..."
 
     def initialize_vector_store(self):
+        username = st.session_state.get("username", "defaultuser")
         kb_name = st.session_state.get("selected_kb", "default")
-        self.vector_store = load_or_create_chroma_db(kb_name)
+        full_kb_name = f"{username}_{kb_name}"
+        self.vector_store = load_or_create_chroma_db(full_kb_name)
         self.doc_manager.vector_store = self.vector_store
 
     def show(self):
@@ -78,7 +83,10 @@ class DocumentInterface:
         # Creazione di una nuova knowledge base
         st.markdown("---")
         st.markdown("### 🆕 Crea una nuova Knowledge Base")
+
+        # Prima del bottone "Crea Knowledge Base"
         new_kb_name = st.text_input("Nome della nuova Knowledge Base", value="")
+
         if st.button("Crea Knowledge Base"):
             if new_kb_name:
                 kb_list = st.session_state.get("knowledge_bases", [])
@@ -87,13 +95,18 @@ class DocumentInterface:
                     st.session_state["knowledge_bases"] = kb_list
                     st.session_state["selected_kb"] = new_kb_name
                     st.success(f"Knowledge Base '{new_kb_name}' creata e selezionata.")
-                    # Reinizializza il vector store con la nuova KB
-                    self.vector_store = load_or_create_chroma_db(new_kb_name)
+
+                    # Modifica qui per l'utente
+                    username = st.session_state["username"]
+                    # Crea la KB con il prefisso dell'utente
+                    full_kb_name = f"{username}_{new_kb_name}"
+
+                    # Usa full_kb_name al posto di new_kb_name
+                    self.vector_store = load_or_create_chroma_db(full_kb_name)
                     self.doc_manager.vector_store = self.vector_store
-                    # Aggiorna la directory di upload
+
                     self.upload_dir = self.get_upload_dir()
                     self.doc_manager.upload_dir = self.upload_dir
-                    # Crea la directory di upload se non esiste
                     if not os.path.exists(self.upload_dir):
                         os.makedirs(self.upload_dir)
                 else:

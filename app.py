@@ -24,7 +24,6 @@ def load_users():
 
 class FinanceQAApp:
     def __init__(self, config_file='app_config.txt'):
-
         # Carica le variabili di ambiente dal file `.env`
         load_dotenv()
 
@@ -41,14 +40,13 @@ class FinanceQAApp:
         # Applica il CSS personalizzato
         apply_custom_css()
 
-
-        # Inizializza le knowledge base
-        if "knowledge_bases" not in st.session_state:
-            kb_list = [name.replace("chroma_", "") for name in os.listdir(".") if name.startswith("chroma_")]
-            st.session_state["knowledge_bases"] = kb_list
-        if "selected_kb" not in st.session_state:
-            st.session_state["selected_kb"] = st.session_state["knowledge_bases"][0] if st.session_state["knowledge_bases"] else None
-
+        # **RIMUOVI O COMMENTA LE SEGUENTI RIGHE**:
+        # Queste righe caricavano le KB prima che l'utente fosse loggato.
+        # if "knowledge_bases" not in st.session_state:
+        #     kb_list = [name.replace("chroma_", "") for name in os.listdir(".") if name.startswith("chroma_")]
+        #     st.session_state["knowledge_bases"] = kb_list
+        # if "selected_kb" not in st.session_state:
+        #     st.session_state["selected_kb"] = st.session_state["knowledge_bases"][0] if st.session_state["knowledge_bases"] else None
 
         # Configura lo stato del toggle per previous_answer
         if "use_previous_answer" not in st.session_state:
@@ -68,24 +66,8 @@ class FinanceQAApp:
 
         st.sidebar.divider()
 
-
-        # Gestione della selezione della Knowledge Base
-        st.sidebar.markdown("### 📚 Seleziona Knowledge Base")
-        kb_list = st.session_state.get("knowledge_bases", [])
-        if kb_list:
-            selected_kb = st.sidebar.selectbox(
-                "Knowledge Base",
-                kb_list,
-                index=kb_list.index(st.session_state["selected_kb"]) if st.session_state.get(
-                    "selected_kb") in kb_list else 0
-            )
-            if st.session_state.get("selected_kb") != selected_kb:
-                st.session_state["selected_kb"] = selected_kb
-        else:
-            st.sidebar.info("Non ci sono Knowledge Base disponibili. Creane una nella sezione 'Gestione Documenti'.")
-
-
-        st.sidebar.divider()
+        # **RIMOZIONE DELLA SEZIONE KB DA QUI**
+        # Ora la selezione delle KB verrà fatta dopo il login, quando conosciamo l'username.
 
         # Selezione del modello di intelligenza artificiale
         st.sidebar.markdown("### Modello Intelligenza Artificiale")
@@ -125,7 +107,6 @@ class FinanceQAApp:
         return config
 
     def log_interaction(self, question, context, formatted_context, answer, history):
-        """Registra i dettagli di ogni interazione nel file di log."""
         logging.info("Domanda: %s", question)
         logging.info("Contesto fornito: %s", context)
         logging.info("Contesto formattato per il modello: %s", formatted_context)
@@ -133,7 +114,6 @@ class FinanceQAApp:
         logging.info("Cronologia: %s", history)
 
     def add_to_history(self, question, answer, references):
-        """Aggiunge una nuova domanda e risposta alla cronologia nella sessione."""
         unique_references = {}
         for ref in references:
             source = ref.get("source_url", ref.get("file_path", "Sconosciuto"))
@@ -147,13 +127,10 @@ class FinanceQAApp:
         st.session_state["history"].append(history_entry)
 
     def load_user_history(self, username):
-        """Carica la cronologia per l'utente specificato da file."""
         user_history_file = f"chat_log_{username}.txt"
         if os.path.exists(user_history_file):
             with open(user_history_file, "r", encoding="utf-8") as f:
                 lines = f.readlines()
-            # Ogni entry sarà salvata in un formato strutturato (es. JSON)
-            # Assumiamo di salvare la cronologia in JSON lines per semplicità:
             import json
             history = []
             for line in lines:
@@ -167,16 +144,13 @@ class FinanceQAApp:
             st.session_state["history"] = []
 
     def save_user_history(self, username):
-        """Salva la cronologia corrente dell'utente su file."""
         user_history_file = f"chat_log_{username}.txt"
         import json
         with open(user_history_file, "w", encoding="utf-8") as f:
             for entry in st.session_state["history"]:
                 f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
-
     def display_history(self):
-        """Visualizza la cronologia nella barra laterale."""
         st.sidebar.markdown(f"### {self.config.get('sidebar_history', '📜 Cronologia delle Domande')}")
         if st.session_state["history"]:
             for i, entry in enumerate(reversed(st.session_state["history"])):
@@ -193,7 +167,6 @@ class FinanceQAApp:
             st.sidebar.info("La cronologia è vuota.")
 
     def load_web_content(self, url):
-        """Scarica e restituisce i contenuti di una pagina web per l'elaborazione."""
         try:
             loader = WebBaseLoader(url)
             documents = loader.load()
@@ -203,12 +176,9 @@ class FinanceQAApp:
             return None
 
     def run(self):
-
-        # Controlla se c'è un token nell'URL
         query_params = st.query_params
         token = query_params.get("token", [None])[0]
 
-        # Se il token esiste e risulta valido, salta la login
         if token and token in SESSION_TOKENS:
             st.session_state["logged_in"] = True
             st.session_state["username"] = SESSION_TOKENS[token]
@@ -236,15 +206,24 @@ class FinanceQAApp:
                     session_token = str(uuid.uuid4())
                     SESSION_TOKENS[session_token] = username
                     # Imposta parametri URL con il token
-                    # Codice aggiornato con st.query_params.from_dict
                     st.query_params.from_dict({"token": session_token})
-
-                    # Ora se l'utente fa refresh, il token rimane nell'URL
                 else:
                     st.error("Credenziali non valide.")
             st.stop()
 
         else:
+            # Ora che l'utente è loggato, filtra le KB in base all'username
+            username = st.session_state["username"]
+            kb_list = [
+                name.replace(f"chroma_{username}_", "")
+                for name in os.listdir(".")
+                if name.startswith(f"chroma_{username}_")
+            ]
+
+            st.session_state["knowledge_bases"] = kb_list
+            if "selected_kb" not in st.session_state:
+                st.session_state["selected_kb"] = kb_list[0] if kb_list else None
+
             # Visualizza il nome dell'utente e il pulsante "Logout" nella barra laterale
             with st.sidebar:
                 cols = st.columns([1, 1])
@@ -252,16 +231,31 @@ class FinanceQAApp:
                 if cols[1].button("Logout"):
                     if token and token in SESSION_TOKENS:
                         del SESSION_TOKENS[token]
-                    # Rimuovi il token dall'URL
                     st.query_params.clear()
                     st.session_state["logged_in"] = False
                     st.session_state["username"] = None
                     st.session_state["history"] = []
                     st.rerun()
 
+            # Gestione della selezione della Knowledge Base a login avvenuto
+            st.sidebar.divider()
+            st.sidebar.markdown("### 📚 Seleziona Knowledge Base")
+            if kb_list:
+                selected_kb = st.sidebar.selectbox(
+                    "Knowledge Base",
+                    kb_list,
+                    index=kb_list.index(st.session_state["selected_kb"]) if st.session_state.get("selected_kb") in kb_list else 0
+                )
+                if st.session_state.get("selected_kb") != selected_kb:
+                    st.session_state["selected_kb"] = selected_kb
+            else:
+                st.sidebar.info("Non ci sono Knowledge Base disponibili. Creane una nella sezione 'Gestione Documenti'.")
 
             # Inizializza o aggiorna il vector store e il document interface in base alla KB selezionata
-            self.vector_store = load_or_create_chroma_db(st.session_state["selected_kb"])
+            # NOTA: ora per caricare la KB devi passare la stringa completa username + nome
+            full_kb_name = f"{username}_{st.session_state['selected_kb']}" if st.session_state['selected_kb'] else None
+            self.vector_store = load_or_create_chroma_db(full_kb_name) if full_kb_name else None
+
             if not hasattr(self, 'doc_interface') or self.doc_interface is None:
                 self.doc_interface = DocumentInterface(self.vector_store)
             else:
@@ -270,9 +264,8 @@ class FinanceQAApp:
             if self.page == "❓ Domande":
                 st.header(self.config.get('header_questions', "💬 Fai una Domanda"))
 
-                # Mostra la knowledge base selezionata
-                selected_kb = st.session_state.get("selected_kb", "Nessuna Knowledge Base selezionata")
-                st.markdown(f"**Knowledge Base selezionata:** {selected_kb}")
+                selected_kb_display = st.session_state.get("selected_kb", "Nessuna Knowledge Base selezionata")
+                st.markdown(f"**Knowledge Base selezionata:** {selected_kb_display}")
 
                 col1, col2 = st.columns([3, 1])
 
@@ -297,7 +290,6 @@ class FinanceQAApp:
                     self.doc_interface.add_web_document(question)
                     st.success("Contenuto web caricato correttamente.")
                 elif self.vector_store and question:
-                    # Usa il contesto della risposta precedente se abilitato
                     if st.session_state["use_previous_answer"] and st.session_state["previous_answer"]:
                         question_with_context = (
                             f"{st.session_state['previous_answer']} \n\nDomanda attuale: {question}"
@@ -305,7 +297,6 @@ class FinanceQAApp:
                     else:
                         question_with_context = question
 
-                    # Esegui la query
                     if self.model_choice == "GPT (OpenAI)" and OPENAI_API_KEY:
                         answer, references = query_rag_with_gpt(
                             question_with_context,
@@ -322,14 +313,10 @@ class FinanceQAApp:
                         answer = "⚠️ La chiave API per il modello selezionato non è disponibile."
                         references = []
 
-                    # Mostra la risposta
                     format_response(answer, references)
-
-                    # Aggiungi alla cronologia e salva
                     self.add_to_history(question, answer, references)
                     self.save_user_history(st.session_state["username"])
 
-                    # Log dell'interazione
                     self.log_interaction(
                         question,
                         question_with_context,
@@ -338,11 +325,9 @@ class FinanceQAApp:
                         st.session_state["history"]
                     )
 
-                    # Aggiorna la risposta precedente se abilitato
                     if st.session_state["use_previous_answer"]:
                         st.session_state["previous_answer"] = answer
 
-                    # Reset della domanda corrente
                     st.session_state["current_question"] = ""
                     st.divider()
                 elif not self.vector_store:
@@ -363,6 +348,5 @@ class FinanceQAApp:
         app.run()
 
 
-# Esegui l'applicazione
 if __name__ == "__main__":
     FinanceQAApp.main()
