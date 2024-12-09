@@ -247,13 +247,13 @@ class FinanceQAApp:
         else:
             # Visualizza il nome dell'utente e il pulsante "Logout" nella barra laterale
             with st.sidebar:
-                cols = st.columns([1, 1])
+                cols = st.columns([3, 1])
                 cols[0].markdown(f"**Utente:** {st.session_state['username']}")
                 if cols[1].button("Logout"):
                     if token and token in SESSION_TOKENS:
                         del SESSION_TOKENS[token]
                     # Rimuovi il token dall'URL
-                    st.experimental_set_query_params()
+                    st.query_params.clear()
                     st.session_state["logged_in"] = False
                     st.session_state["username"] = None
                     st.session_state["history"] = []
