@@ -40,14 +40,6 @@ class FinanceQAApp:
         # Applica il CSS personalizzato
         apply_custom_css()
 
-        # **RIMUOVI O COMMENTA LE SEGUENTI RIGHE**:
-        # Queste righe caricavano le KB prima che l'utente fosse loggato.
-        # if "knowledge_bases" not in st.session_state:
-        #     kb_list = [name.replace("chroma_", "") for name in os.listdir(".") if name.startswith("chroma_")]
-        #     st.session_state["knowledge_bases"] = kb_list
-        # if "selected_kb" not in st.session_state:
-        #     st.session_state["selected_kb"] = st.session_state["knowledge_bases"][0] if st.session_state["knowledge_bases"] else None
-
         # Configura lo stato del toggle per previous_answer
         if "use_previous_answer" not in st.session_state:
             st.session_state["use_previous_answer"] = False  # Disabilitato di default
@@ -205,8 +197,10 @@ class FinanceQAApp:
                     # Genera un token e memorizzalo
                     session_token = str(uuid.uuid4())
                     SESSION_TOKENS[session_token] = username
-                    # Imposta parametri URL con il token
-                    st.query_params.from_dict({"token": session_token})
+
+                    # Set query parameters using key notation
+                    st.query_params['token'] = session_token
+
                 else:
                     st.error("Credenziali non valide.")
             st.stop()
