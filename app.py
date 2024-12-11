@@ -46,11 +46,11 @@ class FinanceQAApp:
         # Inizializza lo stato
         self.initialize_session_state()
 
-        # Barra laterale: Navigazione, Modello, Toggle contesto precedente, Cronologia
-        self.setup_sidebar()
-
         # Scelta della pagina: Domande o Gestione Documenti
-        self.page = st.sidebar.radio("Vai a:", ["❓ Domande", "🗂️ Gestione Documenti"])
+        self.page = None
+
+        self.vector_store = None
+        self.doc_interface = None
 
     def load_config(self, filename):
         """Carica il file di configurazione chiave=valore."""
@@ -63,20 +63,19 @@ class FinanceQAApp:
         return config
 
     def initialize_session_state(self):
-        """Inizializza le variabili di stato della sessione."""
-        # Toggle per l'uso del contesto della risposta precedente
         if "use_previous_answer" not in st.session_state:
             st.session_state["use_previous_answer"] = False
-
-        # Cronologia domande/risposte
         if "history" not in st.session_state:
             st.session_state["history"] = []
-
-        # Risposta precedente e domanda corrente
         if "previous_answer" not in st.session_state:
             st.session_state["previous_answer"] = ""
         if "current_question" not in st.session_state:
             st.session_state["current_question"] = ""
+        # Inizializza lo stato di login
+        if "logged_in" not in st.session_state:
+            st.session_state["logged_in"] = False
+        if "username" not in st.session_state:
+            st.session_state["username"] = None
 
     def setup_sidebar(self):
         """Configura la barra laterale: navigazione, modello AI, cronologia, logout."""
@@ -341,39 +340,82 @@ class FinanceQAApp:
             st.warning("🚨 Nessuna knowledge base disponibile. Carica un documento nella sezione 'Gestione Documenti'.")
 
     def run(self):
-        """Esegue l'applicazione."""
         # Gestisce login
         self.handle_user_login()
 
-        # Barra laterale: mostra utente e pulsante logout
-        username = st.session_state["username"]
-        with st.sidebar:
-            cols = st.columns([1, 1])
-            cols[0].markdown(f"**Utente:** {username}")
+        if st.session_state["logged_in"]:
+            self.setup_sidebar()
+            username = st.session_state["username"]
+            self.vector_store = self.load_vector_store(username)
+
+            # Inizializza o aggiorna doc_interface
+            if not self.doc_interface:
+                self.doc_interface = DocumentInterface(self.vector_store)
+            else:
+                self.doc_interface.update_vector_store(self.vector_store)
+
+            # Ora puoi chiamare le pagine
+            if self.page == "❓ Domande":
+                self.handle_questions_page()
+            elif self.page == "🗂️ Gestione Documenti":
+                self.handle_documents_page()
+
+    def setup_sidebar(self):
+        """Configura la barra laterale: navigazione, modello AI, Knowledge Base, cronologia."""
+        if st.session_state["logged_in"]:
+            username = st.session_state["username"]
+
+            # 1) Navigazione
+            st.sidebar.title(self.config.get('sidebar_navigation', '📚 Navigazione'))
+            st.sidebar.divider()
+            self.page = st.sidebar.radio("Vai a:", ["❓ Domande", "🗂️ Gestione Documenti"])
+
+            # 2) Scelta del modello AI
+            model_options = ["GPT (OpenAI)", "Claude (Anthropic)"]
+            default_index = model_options.index(DEFAULT_MODEL) if DEFAULT_MODEL in model_options else 0
+            self.model_choice = st.sidebar.selectbox("Modello", model_options, index=default_index)
+
+            # Controllo chiavi API
+            if self.model_choice == "GPT (OpenAI)" and not OPENAI_API_KEY:
+                st.sidebar.error("🔑 Chiave API OpenAI non impostata.")
+            elif self.model_choice == "Claude (Anthropic)" and not ANTHROPIC_API_KEY:
+                st.sidebar.error("🔑 Chiave API Anthropic non impostata.")
+
+            # Toggle uso risposta precedente come contesto
+            st.session_state["use_previous_answer"] = st.sidebar.checkbox(
+                "Usa contesto della risposta precedente",
+                value=st.session_state["use_previous_answer"],
+                help="Includi la risposta precedente come contesto."
+            )
+            if not st.session_state["use_previous_answer"]:
+                st.session_state["previous_answer"] = ""
+
+
+            # 3) Seleziona Knowledge Base
+            self.select_knowledge_base(username)
+
+            st.sidebar.divider()
+
+            # 4) Cronologia
+            self.display_history_in_sidebar()
+
+            st.sidebar.divider()
+
+            # Logout
             query_params = st.query_params
             token = query_params.get("token", [None])[0]
 
-            if cols[1].button("Logout"):
-                self.logout_user(token)
+            col_user, col_logout = st.sidebar.columns([2, 1])
+            with col_user:
+                st.markdown(
+                    f"<span style='font-weight:bold; font-size:1.3em; color:#FFFFFF; background-color:#333333; padding:4px 8px; border-radius:5px;'>👤 {username}</span>",
+                    unsafe_allow_html=True
+                )
+            with col_logout:
+                if st.button("🚪 Logout"):
+                    self.logout_user(token)
 
-        # Seleziona la knowledge base per l'utente
-        self.select_knowledge_base(username)
-
-        # Carica vector store
-        self.vector_store = self.load_vector_store(username)
-
-        # Inizializza o aggiorna DocumentInterface
-        if not hasattr(self, 'doc_interface') or self.doc_interface is None:
-            self.doc_interface = DocumentInterface(self.vector_store)
-        else:
-            self.doc_interface.update_vector_store(self.vector_store)
-
-        # Gestione pagine
-        if self.page == "❓ Domande":
-            self.handle_questions_page()
-        elif self.page == "🗂️ Gestione Documenti":
-            self.handle_documents_page()
-
+            st.sidebar.divider()
     @staticmethod
     def main():
         app = FinanceQAApp()
