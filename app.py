@@ -318,7 +318,7 @@ class FinanceQAApp:
                 answer = "⚠️ La chiave API per il modello selezionato non è disponibile."
                 references = []
 
-            format_response(answer, references)
+            format_response(answer, references, self.doc_interface.doc_manager)
             self.add_to_history(question, answer, references)
             self.save_user_history(st.session_state["username"])
 

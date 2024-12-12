@@ -5,7 +5,7 @@ import streamlit as st
 from document_manager import DocumentManager
 from ui_components import apply_custom_css
 from database import load_or_create_chroma_db
-
+import mimetypes
 
 class DocumentInterface:
     def __init__(self, vector_store, upload_dir="uploaded_documents"):
@@ -243,11 +243,38 @@ class DocumentInterface:
                     # Pulsante "Apri Risorsa"
                     if col7.button("Apri Risorsa", key=f"open_{doc['ID Documento']}"):
                         try:
+
+
+                            # All'interno della funzione che gestisce "Apri Risorsa"
                             if doc["Tipo"] == "Web":
-                                st.info(f"Apertura URL: {doc['Fonte']}")
-                                st.markdown(f"[Apri in una nuova scheda]({doc['Fonte']})", unsafe_allow_html=True)
+                                fonte = doc["Fonte"]
+                                mime_type, _ = mimetypes.guess_type(fonte)
+                                if mime_type == "application/pdf":
+                                    # Crea un link che apre il PDF in una nuova scheda
+                                    st.markdown(f"[Apri {doc['Nome Documento']} in una nuova scheda](./?url={fonte})",
+                                                unsafe_allow_html=True)
+                                else:
+                                    # Link standard che apre in una nuova scheda
+                                    st.markdown(f"[Apri {doc['Nome Documento']} in una nuova scheda](./?url={fonte})",
+                                                unsafe_allow_html=True)
                             else:
-                                self.doc_manager.open_document(doc["ID Documento"])
+                                file_path = self.doc_manager.get_document_path(doc["ID Documento"])
+                                if os.path.exists(file_path):
+                                    mime_type, _ = mimetypes.guess_type(file_path)
+                                    # Crea un link che apre il file in una nuova scheda se è un PDF
+                                    if mime_type == "application/pdf":
+                                        # Ottieni l'URL del file se è servito tramite un server, altrimenti usa il percorso locale
+                                        # Supponiamo che i file siano accessibili tramite un URL pubblico o un endpoint specifico
+                                        # Altrimenti, Streamlit non può servire direttamente file locali per motivi di sicurezza
+                                        # Potresti dover configurare un endpoint per servire i file
+                                        st.markdown(f"[Apri {doc['Nome Documento']} in una nuova scheda]({file_path})",
+                                                    unsafe_allow_html=True)
+                                    else:
+                                        st.markdown(f"[Apri {doc['Nome Documento']}]({file_path})",
+                                                    unsafe_allow_html=True)
+                                else:
+                                    st.error("Il file non esiste.")
+
                         except Exception as e:
                             st.error(f"Impossibile aprire la risorsa: {e}")
                             try:

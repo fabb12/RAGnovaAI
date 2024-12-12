@@ -39,11 +39,13 @@ def query_rag_with_gpt(query_text, vector_store, expertise_level="expert"):
         {
             "file_name": doc.metadata.get("file_name", "Documento sconosciuto"),
             "file_path": doc.metadata.get("file_path", "Percorso sconosciuto"),
+            "source_url": doc.metadata.get("source_url", None),  # Aggiunto
         }
         for doc, _ in results
     ]
 
     return response_text, references
+
 
 def query_rag_with_cloud(query_text, vector_store, expertise_level="expert"):
     """
@@ -95,6 +97,7 @@ def query_rag_with_cloud(query_text, vector_store, expertise_level="expert"):
         {
             "file_name": doc.metadata.get("file_name", "Documento sconosciuto"),
             "file_path": doc.metadata.get("file_path", "Percorso sconosciuto"),
+            "source_url": doc.metadata.get("source_url", None),  # Aggiunto
         }
         for doc, _ in results
     ]

@@ -381,6 +381,21 @@ class DocumentManager:
                 })
         return documents
 
+    def get_document_path(self, doc_id):
+        """
+        Recupera il percorso del documento usando l'ID.
+
+        Parameters:
+        - doc_id (str): L'ID del documento.
+
+        Returns:
+        - str or None: Il percorso del file se trovato, altrimenti None.
+        """
+        kb_key = f"document_names_{self.vector_store._persist_directory}"
+        document_names = st.session_state.get(kb_key, {})
+        if doc_id in document_names:
+            return document_names[doc_id].get("file_path")
+        return None
     def open_document(self, doc_id):
         """Apre il documento usando il percorso assoluto memorizzato in `session_state`."""
         kb_key = f"document_names_{self.vector_store._persist_directory}"
