@@ -140,8 +140,9 @@ class FinanceQAApp:
         if not st.session_state["logged_in"]:
             st.title("Accesso Utente")
             with st.form(key="login_form"):
-                username = st.text_input("Username")
-                password = st.text_input("Password", type="password")
+                # Normalizzazione dell'username: spazi rimossi e trasformato in maiuscolo
+                username = st.text_input("Username").strip().upper()
+                password = st.text_input("Password", type="password").strip()
                 submit_button = st.form_submit_button("Login")
 
             if submit_button:
