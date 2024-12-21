@@ -268,7 +268,12 @@ class FinanceQAApp:
 
     def handle_questions_page(self):
         """Gestisce la pagina delle domande."""
-        st.header(self.config.get('header_questions', "💬 Fai una Domanda"))
+        st.header("🚀 Benvenuto nel sistema RAGnova!")
+        st.subheader(
+            "💬 CIAO, {}!\n Inserisci una domanda per esplorare rapidamente la documentazione interna.".format(
+                st.session_state['username'].upper()
+            )
+        )
         selected_kb_display = st.session_state.get("selected_kb", "Nessuna Knowledge Base selezionata")
         st.markdown(f"**Knowledge Base selezionata:** {selected_kb_display}")
 
