@@ -280,7 +280,7 @@ class FinanceQAApp:
         """Gestisce la pagina delle domande."""
         st.header("🚀 Benvenuto nel sistema RAGnova!")
         st.subheader(
-            "💬 CIAO, {}!\n Inserisci una domanda per esplorare rapidamente la documentazione interna.".format(
+            "💬 CIAO, {}! \n Inserisci una domanda per esplorare rapidamente la documentazione interna.".format(
                 st.session_state['username'].upper()
             )
         )
