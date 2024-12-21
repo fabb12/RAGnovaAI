@@ -135,27 +135,37 @@ class FinanceQAApp:
                 st.session_state["logged_in"] = False
             if "username" not in st.session_state:
                 st.session_state["username"] = None
-
         # Se non loggato, mostra il form di login
-        if not st.session_state["logged_in"]:
+        if not st.session_state.get("logged_in", False):
             st.title("Accesso Utente")
             with st.form(key="login_form"):
-                username = st.text_input("Username")
-                password = st.text_input("Password", type="password")
+                # Normalizzazione dell'username: spazi rimossi e trasformato in maiuscolo
+                username = st.text_input("Username").strip().upper()
+                password = st.text_input("Password", type="password").strip()
                 submit_button = st.form_submit_button("Login")
 
             if submit_button:
-                users = load_users()
-                if username in users and password == users[username]:
+                users = load_users()  # Funzione che carica gli utenti registrati
+
+                # Normalizzazione chiavi del dizionario `users` per supportare la comparazione
+                normalized_users = {key.upper(): value.strip() for key, value in users.items()}
+
+                # Verifica credenziali
+                if username in normalized_users and password == normalized_users[username]:
                     st.session_state["logged_in"] = True
                     st.session_state["username"] = username
                     self.load_user_history(username)
-                    # Genera token sessione
+
+                    # Genera un token univoco per la sessione
                     session_token = str(uuid.uuid4())
                     SESSION_TOKENS[session_token] = username
-                    st.query_params = {"token": session_token}
+
+                    # Imposta i parametri della query con il token di sessione
+                    st.query_params = {"token":session_token}
+
                 else:
                     st.error("Credenziali non valide.")
+
             st.stop()
 
     def load_user_history(self, username):

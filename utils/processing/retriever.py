@@ -32,7 +32,7 @@ def query_rag_with_gpt(query_text, vector_store, expertise_level="expert"):
         conversation_history=""
     )
 
-    model = ChatOpenAI(max_tokens=5000)
+    model = ChatOpenAI(max_tokens=4096)
     response_text = model.predict(prompt)
 
     references = [
