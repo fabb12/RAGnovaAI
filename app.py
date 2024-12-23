@@ -278,9 +278,9 @@ class FinanceQAApp:
 
     def handle_questions_page(self):
         """Gestisce la pagina delle domande."""
-        st.header("🚀 Benvenuto nel sistema RAGnova!")
+        st.header("Benvenuto nel sistema RAGnova!")
         st.subheader(
-            "💬 CIAO, {}! \n Inserisci una domanda per esplorare rapidamente la documentazione interna.".format(
+            "Buongiorno, {}! \n Inserisci una domanda per esplorare rapidamente la documentazione interna.".format(
                 st.session_state['username'].upper()
             )
         )
