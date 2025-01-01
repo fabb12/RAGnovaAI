@@ -176,8 +176,6 @@ MFHelpDeskAI/
 
 - **Persistenza**: Le Knowledge Base vengono salvate in cartelle `chroma_username_kbname`. Ogni utente (username) può avere più KB.  
 - **Prompt Personalizzabile**: Il file `prompt_template.txt` definisce il formato del prompt RAG. Puoi modificarlo per personalizzare lo stile delle risposte.  
-- **Gestione Sicurezza**: Per progetti in produzione, si consiglia di adottare un approccio più robusto per la gestione delle credenziali (ad esempio, un database protetto, OAuth, ecc.).
-
 ## Autore e Informazioni
 
 - Sviluppato da FFA.
