@@ -113,10 +113,3 @@ All’interno della cartella `utils/`, il codice è suddiviso per macro-funziona
 6. **Visualizzazione**: La risposta viene formattata da `formatter.py`, allegando link/nomi dei documenti sorgente.  
 
 ---
-
-## Conclusioni
-L’architettura del sistema **HelpDeskRAG** si basa su **Streamlit** per la **UI** e si affida a **Chroma** come *vector store* per gestire l’indicizzazione e la ricerca semantica dei contenuti. L’utilizzo del pattern **RAG** consente di fornire risposte di alta qualità, integrate dai dati effettivi conservati nei documenti. Questa struttura modulare rende il sistema estensibile e facilmente manutenibile, favorendo l’aggiunta di nuove tipologie di documenti e nuovi modelli di *large language model* nel futuro.
-
----
-
-> **Nota**: Il codice mostrato include funzionalità aggiuntive (es. caricamento di siti web con *BeautifulSoup*, login utenti, gestione OCR). Tuttavia, l’impianto principale è organizzato per fornire risposte con un approccio RAG, integrando la potenza dei modelli di linguaggio e un database di documenti semantici (*vector store*).
