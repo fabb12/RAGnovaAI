@@ -107,7 +107,7 @@ MFHelpDeskAI/
 
 1. **Clona il repository**:
    ```bash
-   git clone https://github.com/tuo-username/MFHelpDeskAI.git
+   git clone https://github.com/fabb12/MFHelpDeskAI.git
    cd MFHelpDeskAI
    ```
 
