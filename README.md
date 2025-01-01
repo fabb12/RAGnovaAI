@@ -99,7 +99,6 @@ MFHelpDeskAI/
 
 11. **`users.json`**  
     - File JSON di esempio per la gestione degli utenti (username/password).  
-    - **Nota**: in un ambiente di produzione, sarebbe opportuno usare un database o un sistema di autenticazione più sicuro.
 
 ---
 
