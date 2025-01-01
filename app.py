@@ -278,14 +278,16 @@ class FinanceQAApp:
 
     def handle_questions_page(self):
         """Gestisce la pagina delle domande."""
-        st.header("🚀 Benvenuto nel sistema RAGnova!")
+        st.header("Buongiorno, {}!".format(st.session_state['username'].upper()))
         st.subheader(
-            "💬 CIAO, {}! \n Inserisci una domanda per esplorare rapidamente la documentazione interna.".format(
+            "Benvenuto nel sistema RAGnova! \n Inserisci una domanda per esplorare rapidamente la documentazione interna.".format(
                 st.session_state['username'].upper()
             )
         )
-        selected_kb_display = st.session_state.get("selected_kb", "Nessuna Knowledge Base selezionata")
-        st.markdown(f"**Knowledge Base selezionata:** {selected_kb_display}")
+        #selected_kb_display = st.session_state.get("selected_kb", "Nessuna Knowledge Base selezionata")
+        #st.markdown(f"**Knowledge Base selezionata:** {selected_kb_display}")
+
+        st.divider()
 
         col1, col2 = st.columns([3, 1])
         with col1:
@@ -303,7 +305,7 @@ class FinanceQAApp:
                 index=2,
                 help="Scegli il livello per adattare il dettaglio della risposta."
             )
-
+        st.divider()
         # Se l'input è un URL, carica i contenuti da web
         if validators.url(question):
             st.info("Riconosciuto come URL. Caricamento contenuti dal sito web...")
