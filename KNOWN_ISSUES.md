@@ -6,17 +6,8 @@ Questo file elenca i problemi noti e le aree di miglioramento per il progetto. G
 
 ## Problemi Noti e Funzionalità Mancanti
 
-### **Integrare Funzionalità dal Progetto RAG GPT**
---------------------
-- **Link**:
-  - https://github.com/NirDiamant/RAG_Techniques
-  - https://github.com/bRAGAI/bRAG-langchain/
-- **Descrizione**: Integrare tecniche avanzate di Retrieval-Augmented Generation (RAG) dal progetto RAG GPT per migliorare le capacità del sistema.
-- **Note**: Considerare l'implementazione di funzionalità come il chunking semantico, la trasformazione delle query, il re-ranking intelligente e altre tecniche avanzate.
 
----
-
-### 1. **Implementare il Chunking Semantico (Semantic Chunking) 🧠** (FATTO)
+### 1. **Implementare il Chunking Semantico (Semantic Chunking) 🧠** 
    - **Descrizione**: Dividere i documenti basandosi sulla coerenza semantica anziché su dimensioni fisse, per preservare il contesto e migliorare la qualità del recupero delle informazioni.
    - **Suggerimento**: Utilizzare librerie NLP come spaCy o NLTK per identificare le sezioni coerenti all'interno dei documenti e modificare le funzioni di caricamento dei documenti per includere il chunking semantico.
 
@@ -163,10 +154,5 @@ Questo file elenca i problemi noti e le aree di miglioramento per il progetto. G
 
 ---
 
-## Note Finali
-
-Continuare a iterare e migliorare il progetto basandosi sui feedback degli utenti e sui test di integrazione con diverse knowledge base.
-
-Implementare gradualmente le tecniche avanzate di RAG elencate, iniziando dalle più semplici come la trasformazione delle query e il re-ranking intelligente, per poi passare a implementazioni più complesse come il self RAG e l'integrazione di knowledge graph.
 
 ---

@@ -1,7 +1,5 @@
 # Changelog
 
-Questo documento riassume le modifiche apportate per implementare il **semantic chunking** nel progetto.
-
 ---
 
 ## Versione 1.1.0 - Data: 27/11/2024
