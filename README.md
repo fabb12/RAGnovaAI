@@ -13,7 +13,7 @@ Questo sistema utilizza **OpenAI** (modello GPT) e/o **Anthropic** (modello Clau
 
 ---
 
-## Requisiti
+## Requisiti 
 
 - **Python 3.9+**  
 - **pip** o **conda** per gestire i pacchetti.  
