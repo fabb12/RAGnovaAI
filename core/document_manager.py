@@ -5,12 +5,12 @@ import os
 import uuid
 import hashlib
 from datetime import datetime
-from utils.processing.embeddings import create_embeddings
-from utils.loaders.document_loader import load_document, split_text_semantic  # Per gestione documenti e chunk
+from core.embeddings import create_embeddings
+from utils.document_loader import load_document, split_text_semantic
 import validators
 from urllib.parse import urljoin
 import requests
-from langchain.schema import Document  # Se non già importato
+from langchain.schema import Document
 from bs4 import BeautifulSoup
 class DocumentManager:
     ALLOWED_EXTENSIONS = {".pdf", ".docx", ".docs", ".txt", ".csv"}
@@ -244,7 +244,7 @@ class DocumentManager:
 
     def truncate_text(self, text, max_length=50):
         """
-        Trunca un testo se supera la lunghezza massima specificata.
+        Tronca un testo se supera la lunghezza massima specificata.
         Aggiunge '...' alla fine per indicare il troncamento.
 
         Parameters:

@@ -2,9 +2,9 @@
 
 import os
 import streamlit as st
-from document_manager import DocumentManager
-from ui_components import apply_custom_css
-from database import load_or_create_chroma_db
+from core.document_manager import DocumentManager
+from ui.ui_components import apply_custom_css
+from core.database import load_or_create_chroma_db
 import mimetypes
 
 class DocumentInterface:

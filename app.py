@@ -9,12 +9,13 @@ import validators
 from dotenv import load_dotenv
 
 from config import OPENAI_API_KEY, ANTHROPIC_API_KEY, DEFAULT_MODEL
-from database import load_or_create_chroma_db
-from document_interface import DocumentInterface
-from ui_components import apply_custom_css
-from utils.processing.retriever import query_rag_with_gpt, query_rag_with_cloud
-from utils.formatting.formatter import format_response
+from core.database import load_or_create_chroma_db
+from ui.document_interface import DocumentInterface
+from core.retriever import query_rag_with_gpt, query_rag_with_cloud
+from core.formatter import format_response
 from langchain_community.document_loaders import WebBaseLoader
+from ui.ui_components import apply_custom_css
+
 
 # Gestione dei token di sessione per gli utenti loggati
 SESSION_TOKENS = {}
@@ -40,13 +41,11 @@ class FinanceQAApp:
             page_icon=self.config.get('page_icon', '💬')
         )
 
-        # Applica il CSS personalizzato
         apply_custom_css()
 
         # Inizializza lo stato
         self.initialize_session_state()
 
-        # Scelta della pagina: Domande o Gestione Documenti
         self.page = None
 
         self.vector_store = None

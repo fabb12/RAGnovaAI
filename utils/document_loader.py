@@ -6,9 +6,8 @@ import os
 import pypandoc
 from tempfile import TemporaryDirectory
 
-from langchain_experimental.text_splitter import SemanticChunker, BreakpointThresholdType
+from langchain_experimental.text_splitter import SemanticChunker
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.schema import Document
 
 
 
