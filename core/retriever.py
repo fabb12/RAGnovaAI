@@ -1,8 +1,4 @@
-# processing/retriever.py
-
-from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from langchain_community.llms.anthropic import Anthropic
 from anthropic import Anthropic
 import os
 
@@ -10,43 +6,7 @@ def load_prompt_from_file(file_path="prompt_template.txt"):
     with open(file_path, "r", encoding="utf-8") as file:
         return file.read()
 
-
 PROMPT_TEMPLATE = load_prompt_from_file()
-
-def query_rag_with_gpt(query_text, vector_store, expertise_level="expert"):
-    """
-    Esegue una query sul vector_store fornito e restituisce una risposta arricchita dal contesto.
-    Restituisce la risposta generata e un elenco di riferimenti ai documenti pertinenti.
-    """
-    results = vector_store.similarity_search_with_relevance_scores(query_text, k=3)
-    if len(results) == 0:
-        return "Non ci sono risultati pertinenti per la tua domanda.", []
-
-    context_text = "\n\n- -\n\n".join([doc.page_content for doc, _ in results])
-    prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-
-    prompt = prompt_template.format(
-        context=context_text,
-        question=query_text,
-        expertise_level=expertise_level,
-        conversation_history=""
-    )
-
-    model = ChatOpenAI(max_tokens=4096)
-    response_text = model.predict(prompt)
-
-    references = [
-        {
-            "file_name": doc.metadata.get("file_name", "Documento sconosciuto"),
-            "file_path": doc.metadata.get("file_path", "Percorso sconosciuto"),
-            "source_url": doc.metadata.get("source_url", None),  # Aggiunto
-        }
-        for doc, _ in results
-    ]
-
-    return response_text, references
-
-
 def query_rag_with_cloud(query_text, vector_store, expertise_level="expert"):
     """
     Esegue una query sul vector_store fornito e restituisce una risposta arricchita dal contesto
@@ -97,9 +57,9 @@ def query_rag_with_cloud(query_text, vector_store, expertise_level="expert"):
         {
             "file_name": doc.metadata.get("file_name", "Documento sconosciuto"),
             "file_path": doc.metadata.get("file_path", "Percorso sconosciuto"),
-            "source_url": doc.metadata.get("source_url", None),  # Aggiunto
+            "source_url": doc.metadata.get("source_url", None),
         }
         for doc, _ in results
     ]
 
-    return result_text, references, input_tokens, output_tokens
+    return result_text, references

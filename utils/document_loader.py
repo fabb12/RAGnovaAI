@@ -7,7 +7,7 @@ import pypandoc
 from tempfile import TemporaryDirectory
 
 from langchain_experimental.text_splitter import SemanticChunker
-from langchain.embeddings import OpenAIEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings
 
 
 
@@ -77,8 +77,7 @@ def load_document(file_path_or_url):
 # document_loader.py
 
 def split_text_semantic(documents, breakpoint_type="percentile", breakpoint_amount=90):
-    """Divide i documenti in chunk semantici."""
-    embeddings = OpenAIEmbeddings()
+    embeddings = HuggingFaceEmbeddings()
     semantic_chunker = SemanticChunker(
         embeddings=embeddings,
         breakpoint_threshold_type=breakpoint_type,
@@ -88,11 +87,9 @@ def split_text_semantic(documents, breakpoint_type="percentile", breakpoint_amou
     for doc in documents:
         doc_chunks = semantic_chunker.create_documents(texts=[doc.page_content])
         for chunk in doc_chunks:
-            # Aggiorna i metadati per ogni chunk
             chunk.metadata.update(doc.metadata)
             chunks.append(chunk)
     return chunks
-
 
 def split_text_plain(documents, chunk_size=300, chunk_overlap=100):
     """Divide i documenti in chunk più piccoli."""
