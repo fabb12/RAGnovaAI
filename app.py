@@ -15,11 +15,9 @@ from ui.ui_components import apply_custom_css
 # Gestione dei token di sessione per gli utenti loggati
 SESSION_TOKENS = {}
 
-
 def load_users():
     with open("users.json", "r", encoding="utf-8") as f:
         return json.load(f)
-
 
 class FinanceQAApp:
     def __init__(self, config_file='app_config.txt'):
@@ -67,8 +65,8 @@ class FinanceQAApp:
             st.sidebar.divider()
             self.page = st.sidebar.radio("Vai a:", ["❓ Domande", "🗂️ Gestione Documenti"])
 
-            # Selezione del modello: Cloud oppure Deepseek (Locale)
-            model_options = ["Cloud", "Deepseek (Locale)"]
+            # Selezione del modello: Cloud, Deepseek (Locale) o Gemma (Locale)
+            model_options = ["Cloude (Antrophic)", "Deepseek (Locale)", "Gemma (Locale)"]
             self.model_choice = st.sidebar.selectbox("Modello", model_options, index=0)
 
             st.session_state["use_previous_answer"] = st.sidebar.checkbox(
@@ -89,7 +87,9 @@ class FinanceQAApp:
             col_user, col_logout = st.sidebar.columns([2, 1])
             with col_user:
                 st.markdown(
-                    f"<span style='font-weight:bold; font-size:1.3em; color:#FFFFFF; background-color:#333333; padding:4px 8px; border-radius:5px;'>👤 {username}</span>",
+                    f"<span style='font-weight:bold; font-size:1.3em; color:#FFFFFF; "
+                    f"background-color:#333333; padding:4px 8px; border-radius:5px;'>"
+                    f"👤 {username}</span>",
                     unsafe_allow_html=True
                 )
             with col_logout:
@@ -123,7 +123,7 @@ class FinanceQAApp:
                 st.session_state["logged_in"] = False
             if "username" not in st.session_state:
                 st.session_state["username"] = None
-        if not st.session_state.get("logged_in", False):
+        if not st.session_state["logged_in"]:
             st.title("Accesso Utente")
             with st.form(key="login_form"):
                 username = st.text_input("Username").strip().upper()
@@ -208,8 +208,7 @@ class FinanceQAApp:
             selected_kb = st.sidebar.selectbox(
                 "Knowledge Base",
                 kb_list,
-                index=kb_list.index(st.session_state["selected_kb"]) if st.session_state[
-                                                                            "selected_kb"] in kb_list else 0
+                index=kb_list.index(st.session_state["selected_kb"]) if st.session_state["selected_kb"] in kb_list else 0
             )
             if st.session_state.get("selected_kb") != selected_kb:
                 st.session_state["selected_kb"] = selected_kb
@@ -241,11 +240,9 @@ class FinanceQAApp:
         self.doc_interface.show()
 
     def handle_questions_page(self):
-        st.header("Buongiorno, {}!".format(st.session_state['username'].upper()))
+        st.header(f"Buongiorno, {st.session_state['username'].upper()}!")
         st.subheader(
-            "Benvenuto nel sistema RAGnova! \n Inserisci una domanda per esplorare rapidamente la documentazione interna.".format(
-                st.session_state['username'].upper()
-            )
+            "Benvenuto nel sistema RAGnova! Inserisci una domanda per esplorare rapidamente la documentazione interna."
         )
         st.divider()
 
@@ -272,12 +269,14 @@ class FinanceQAApp:
             st.success("Contenuto web caricato correttamente.")
         elif self.vector_store and question:
             if st.session_state["use_previous_answer"] and st.session_state["previous_answer"]:
-                question_with_context = f"{st.session_state['previous_answer']}\n\nDomanda attuale: {question}"
+                question_with_context = (
+                    f"{st.session_state['previous_answer']}\n\nDomanda attuale: {question}"
+                )
             else:
                 question_with_context = question
 
             # Seleziona il modello in base alla scelta
-            if self.model_choice == "Cloud":
+            if self.model_choice == "Cloude (Antrophic)":
                 from core.retriever import query_rag_with_cloud
                 answer, references = query_rag_with_cloud(
                     question_with_context,
@@ -287,6 +286,13 @@ class FinanceQAApp:
             elif self.model_choice == "Deepseek (Locale)":
                 from core.retriever_deepseek import query_rag_with_deepseek
                 answer, references = query_rag_with_deepseek(
+                    question_with_context,
+                    self.vector_store,
+                    expertise_level=expertise_level
+                )
+            elif self.model_choice == "Gemma (Locale)":
+                from core.retriever_gemma import query_rag_with_gemma
+                answer, references = query_rag_with_gemma(
                     question_with_context,
                     self.vector_store,
                     expertise_level=expertise_level
@@ -333,7 +339,6 @@ class FinanceQAApp:
     def main():
         app = FinanceQAApp()
         app.run()
-
 
 if __name__ == "__main__":
     FinanceQAApp.main()
